@@ -994,6 +994,38 @@ unsigned CPU::execute() {
       pc = mem.read16(sp); sp += 2;
       ime = true; cycles += 3;
       break;
+    case 0xc7: // RST 0x00
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x00; cycles += 3;
+      break;
+    case 0xcf: // RST 0x08
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x08; cycles += 3;
+      break;
+    case 0xd7: // RST 0x10
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x10; cycles += 3;
+      break;
+    case 0xdf: // RST 0x18
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x18; cycles += 3;
+      break;
+    case 0xe7: // RST 0x20
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x20; cycles += 3;
+      break;
+    case 0xef: // RST 0x28
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x28; cycles += 3;
+      break;
+    case 0xf7: // RST 0x30
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x30; cycles += 3;
+      break;
+    case 0xff: // RST 0x38
+      sp -= 2; mem.write16(sp, pc + 2);
+      pc = 0x38; cycles += 3;
+      break;
     // Miscellaneous Instructions
     case 0x76: // HALT
       halt = (ime || (mem.read(IE) & mem.read(IF) & 0x1f) == 0);

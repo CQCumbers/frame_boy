@@ -7,7 +7,7 @@ using namespace std;
 
 int main() {
   // initialize hardware
-  Memory mem("roms/cpu_instrs.gb");
+  Memory mem("roms/instr_timing.gb");
   CPU cpu(mem);
   PPU ppu(mem);
   Timer timer(mem);
