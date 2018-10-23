@@ -1,0 +1,12 @@
+# based on Makefile clean command
+*.exe
+*~
+*.out
+*.dSYM
+*.stackdump
+
+# macOS stuff
+.DS_Store
+
+# test roms
+*.gb

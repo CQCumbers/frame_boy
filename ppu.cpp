@@ -18,12 +18,14 @@ void PPU::update(unsigned cpu_cycles) {
     mem.write(LY, 0x0);
   }
   // catch up to CPU cycles
-  for (int i = 0; i < cpu_cycles; ++i, ++cycles) {
+  for (int i = 0; i < cpu_cycles; ++i) {
+    ++cycles;
     switch (mode) {
       case 0x0: // H-BLANK
         if (cycles == 51) {
           mem.write(LY, mem.read(LY) + 1); cycles = 0;
           mode = ((mem.read(LY) == 0x90) ? 0x1 : 0x2);
+          if (mode == 0x1) { mem.write(IF, mem.read(IF) | 0x1); }
           mem.write(STAT, (mem.read(STAT) & 0xfc) | mode);
         }
         break;

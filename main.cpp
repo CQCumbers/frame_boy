@@ -1,33 +1,37 @@
 #include <iostream>
 #include "cpu.h"
 #include "ppu.h"
+#include "timer.h"
 
 using namespace std;
 
 int main() {
   // initialize hardware
   Memory mem("roms/cpu_instrs.gb");
-  CPU cpu(mem); PPU ppu(mem);
+  CPU cpu(mem);
+  PPU ppu(mem);
+  Timer timer(mem);
 
   // run to breakpoint, then step
   cpu.print();
-  /*for (int i = 0; i < 512; ++i) {*/
-  while (cin.ignore()) {
-    uint8_t SD = 0x01; uint8_t SC = 0x02;
-    while (true) {//(mem.read(cpu.get_pc()) != 0xe8) {
-      ppu.update(cpu.execute());
-      if (mem.read(SC) >> 7) {
-        mem.write(SC, SD);
-        cout << (char)mem.read(SD) << flush;
-      }
+  uint8_t SD = 0x01; uint8_t SC = 0x02;
+  while (true) {//mem.read(uint8_t(0x07)) == 0) {//mem.read(cpu.get_pc()) != 0xf0) {
+    unsigned cycles = cpu.execute();
+    ppu.update(cycles);
+    timer.update(cycles);
+    if (mem.read(SC) >> 7) {
+      mem.write(SC, SD);
+      cout << (char)mem.read(SD) << flush;
     }
-    cpu.print();
-    ppu.update(cpu.execute());
-    cpu.print();
   }
+
   while (cin.ignore()) {
     cpu.print();
-    ppu.update(cpu.execute());
-    cout << "LY value: " << hex << (unsigned)mem.read((uint8_t)0x44) << endl;
+    cout << "IF value: " << hex << (unsigned)mem.read((uint8_t)0xf) << endl;
+    cout << "TIMA value: " << hex << (unsigned)mem.read((uint8_t)0x05) << endl;
+    cout << "TAC value: " << hex << (unsigned)mem.read((uint8_t)0x07) << endl;
+    unsigned cycles = cpu.execute();
+    ppu.update(cycles);
+    timer.update(cycles);
   }
 }

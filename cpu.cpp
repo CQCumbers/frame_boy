@@ -1,4 +1,5 @@
 #include <iostream>
+#include <strings.h>
 #include "cpu.h"
 
 using namespace std;
@@ -153,14 +154,26 @@ inline uint8_t CPU::set(uint8_t n, uint8_t a) {
 // Core Functions
 
 void CPU::check_interrupts() {
-  if (ime) { cout << "Interrupts Enabled\n"; }
-  else { cout << "Interrupts Disabled\n"; }
+  // call appropriate interrupt, lower bit priority
+  uint8_t interrupt = ffs(mem.read(IF) & mem.read(IE) & 0x1f);
+  if (interrupt != 0) {
+    if (halt) { halt = false; ++cycles; }
+    if (ime) {
+      sp -= 2; mem.write16(sp, pc);
+      pc = 0x37 + 0x8 * interrupt;
+      mem.write(IF, reset(interrupt - 1, mem.read(IF)));
+      ime = false; cycles += 5;
+    }
+  }
 }
 
 unsigned CPU::execute() {
+  check_interrupts();
   unsigned initial_cycles = cycles; ++cycles;
-  uint8_t u = 0x0; // temporary variable
+  if (halt) { return cycles - initial_cycles; }
   if (ime_scheduled) { ime = true; ime_scheduled = false; }
+
+  uint16_t u = 0x0;
   switch (mem.read(pc++)) {
     // 8-Bit Load & Store Instructions
     case 0x40: // LD B B
@@ -983,7 +996,11 @@ unsigned CPU::execute() {
       break;
     // Miscellaneous Instructions
     case 0x76: // HALT
-      halt = true;
+      halt = (ime || (mem.read(IE) & mem.read(IF) & 0x1f) == 0);
+      if (!halt) { // simulate halt bug
+        u = --pc; mem.write(u, mem.read((uint16_t)(u + 1)));
+        execute(); mem.write(u, 0x76);
+      }
       break;
     case 0x10: // STOP
       stop = true; ++pc;
@@ -1000,6 +1017,7 @@ unsigned CPU::execute() {
       cout << "Unimplemented opcode "
         << (unsigned)mem.read(--pc);
   }
+
   return cycles - initial_cycles;
 }
 

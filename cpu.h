@@ -31,6 +31,7 @@ class CPU {
     Memory &mem; unsigned cycles = 0;
     bool ime = false, ime_scheduled = false;
     bool halt = false, stop = false;
+    static const uint8_t IF = 0x0f, IE = 0xff;
 
     // Arithmetic Functions
     uint8_t add(uint8_t a, uint8_t b);
