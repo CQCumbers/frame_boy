@@ -169,11 +169,11 @@ void CPU::check_interrupts() {
 
 unsigned CPU::execute() {
   check_interrupts();
-  unsigned initial_cycles = cycles; ++cycles;
+  unsigned initial_cycles = cycles;
+  uint16_t u = 0x0; ++cycles;
   if (halt) return cycles - initial_cycles;
   if (ime_scheduled) { ime = true; ime_scheduled = false; }
 
-  uint16_t u = 0x0;
   switch (mem.read(pc++)) {
     // 8-Bit Load & Store Instructions
     case 0x40: // LD B B
@@ -1028,11 +1028,7 @@ unsigned CPU::execute() {
       break;
     // Miscellaneous Instructions
     case 0x76: // HALT
-      halt = (ime || (mem.read(IE) & mem.read(IF) & 0x1f) == 0);
-      if (!halt) { // simulate halt bug
-        u = --pc; mem.write(u, mem.read((uint16_t)(u + 1)));
-        execute(); mem.write(u, 0x76);
-      }
+      halt = true;
       break;
     case 0x10: // STOP
       stop = true; ++pc;
@@ -1047,7 +1043,7 @@ unsigned CPU::execute() {
       break;
     default:
       cout << "Unimplemented opcode "
-        << (unsigned)mem.read(--pc);
+        << (unsigned)mem.read(--pc) << endl;
   }
 
   return cycles - initial_cycles;

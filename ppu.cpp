@@ -14,20 +14,30 @@ PPU::PPU(Memory &mem_in): mem(mem_in) {
   lcd.fill(0x0);
 }
 
-void PPU::drawpixels() {
+void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset) {
   // calculate which bg_map tile
-  uint8_t map_y = ((scy + y) >> 3) & 0x1f;
-  uint8_t map_x = ((scx + x) >> 3) & 0x1f;
-  uint8_t tile = mem.read((uint16_t)(bg_map + (map_y << 5) + map_x));
+  uint8_t map_y = (y_offset >> 3) & 0x1f;
+  uint8_t map_x = (x_offset >> 3) & 0x1f;
+  uint8_t tile = mem.read((uint16_t)(map + (map_y << 5) + map_x));
   if (!mem.readbit(LCDC, 4)) tile ^= 0x80;
-  // calculate which line of bg_map tile
-  uint8_t tile_y = (scy + y) & 0x7;
+  // calculate which line of bg_tile
+  uint8_t tile_y = y_offset & 0x7;
   uint16_t line = mem.read16((uint16_t)(bg_tiles + tile * 16 + tile_y * 2));
-  for (int i = 0; i < 4; ++i, ++x) {
-    // read pixel from line of bg_map tile
-    uint8_t tile_x = 7 - ((scx + x) & 0x7);
+  for (int i = 0; i < 4; ++i) {
+    // read pixel from line of bg_tile
+    uint8_t tile_x = 7 - (x_offset & 0x7);
     uint8_t pixel = ((line >> tile_x) & 0x1) | ((line >> (7 + tile_x)) & 0x2);
     lcd[y * 160 + x] = (mem.read(BGP) >> (pixel << 1)) & 0x3;
+    ++x_offset, ++x;
+  }
+}
+
+void PPU::draw() {
+  if (y >= wy && x >= wx) {
+    x -= (x - wx) & 0x3;
+    draw_tile(win_map, x - wx, y - wy);
+  } else {
+    draw_tile(bg_map, scx + x, scy + y);
   }
 }
 
@@ -62,6 +72,7 @@ void PPU::update(unsigned cpu_cycles) {
         if (cycles == 20) {
           cycles = 0; mode = 0x3; x = 0; y = mem.read(LY);
           scx = mem.read(SCX), scy = mem.read(SCY);
+          wx = mem.read(WX), wy = mem.read(WY);
           mem.write(STAT, (mem.read(STAT) & 0xfc) | mode);
           // set VRAM memory map
           bg_map = mem.readbit(LCDC, 3) ? 0x9c00 : 0x9800;
@@ -70,7 +81,7 @@ void PPU::update(unsigned cpu_cycles) {
         }
         break;
       case 0x3: // Using VRAM
-        if (cycles > 3) drawpixels();
+        if (cycles > 3) draw();
         if (x == 160) {
           mode = x = 0; bool lyc = (mem.read(LYC) == mem.read(LY));
           if (mem.readbit(STAT, mode)) mem.writebit(IF, 1, true);

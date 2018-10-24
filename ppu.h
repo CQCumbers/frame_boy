@@ -10,14 +10,15 @@ class PPU {
     std::array<uint8_t, 160 * 144> lcd;
     unsigned cycles = 0;
     uint16_t bg_tiles, bg_map, win_map;
-    uint8_t x, y, scx, scy;
+    uint8_t x, y, scx, scy, wx, wy;
     static const uint8_t LCDC = 0x40, STAT = 0x41,
       SCY = 0x42, SCX = 0x43, LY = 0x44, LYC = 0x45,
       DMA = 0x46, BGP = 0x47, OBP0 = 0x48, OBP1 = 0x49,
       WX = 0x4a, WY = 0x4b, IF = 0x0f;
 
     // Drawing Functions
-    void drawpixels();
+    void draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset);
+    void draw();
 
   public:
     // Core Functions

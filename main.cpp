@@ -22,14 +22,13 @@ void show(const PPU &ppu) {
 
 int main() {
   // initialize hardware
-  Memory mem("roms/instr_timing.gb");
+  Memory mem("roms/cpu_instrs.gb");
   CPU cpu(mem); PPU ppu(mem); Timer timer(mem);
 
   // run to breakpoint, then step
-  cpu.print();
-  bool printed = false;
   uint8_t SD = 0x01; uint8_t SC = 0x02;
-  while (true) {//mem.read(uint8_t(0x07)) == 0) {//mem.read(cpu.get_pc()) != 0xf0) {
+  bool shown = false;
+  while (true) {
     unsigned cycles = cpu.execute();
     ppu.update(cycles);
     timer.update(cycles);
@@ -37,13 +36,12 @@ int main() {
       mem.write(SC, SD);
       cout << (char)mem.read(SD) << flush;
     }
-    if(!printed && ppu.mode == 0x1) { show(ppu); printed = true; }
-    if (ppu.mode != 0x1) { printed = false; }
+    if (!shown && ppu.mode == 0x01) { show(ppu); shown = true; }
+    if (ppu.mode != 0x01) { shown = false; }
   }
 
   while (cin.ignore()) {
     cpu.print();
-    cout << "IF value: " << hex << (unsigned)mem.read((uint8_t)0xf) << endl;
     cout << "TIMA value: " << hex << (unsigned)mem.read((uint8_t)0x05) << endl;
     cout << "TAC value: " << hex << (unsigned)mem.read((uint8_t)0x07) << endl;
     unsigned cycles = cpu.execute();

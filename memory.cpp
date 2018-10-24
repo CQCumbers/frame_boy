@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cassert>
 #include "memory.h"
 
 using namespace std;
@@ -7,6 +8,7 @@ using namespace std;
 
 Memory::Memory(const string &filename) {
   ifstream file(filename, ios::binary);
+  //assert(file.good());
   file.read((char *)mem.data(), mem.size());
 }
 
