@@ -161,7 +161,7 @@ void CPU::check_interrupts() {
     if (ime) {
       sp -= 2; mem.write16(sp, pc);
       pc = 0x37 + 0x8 * interrupt;
-      mem.write(IF, reset(interrupt - 1, mem.read(IF)));
+      mem.writebit(IF, interrupt - 1, false);
       ime = false; cycles += 5;
     }
   }
@@ -170,7 +170,7 @@ void CPU::check_interrupts() {
 unsigned CPU::execute() {
   check_interrupts();
   unsigned initial_cycles = cycles; ++cycles;
-  if (halt) { return cycles - initial_cycles; }
+  if (halt) return cycles - initial_cycles;
   if (ime_scheduled) { ime = true; ime_scheduled = false; }
 
   uint16_t u = 0x0;
@@ -806,7 +806,7 @@ unsigned CPU::execute() {
       break;
     case 0x27: // DAA
       // see https://www.reddit.com/r/EmuDev/comments/4ycoix
-      if (f.h || (!f.n && (a & 0xf) > 0x9)) { u = 0x6; }
+      if (f.h || (!f.n && (a & 0xf) > 0x9)) u = 0x6;
       if (f.c || (!f.n && a > 0x99)) { u |= 0x60; f.c = true; }
       a = f.n ? a - u : a + u;
       f.h = false; f.z = (a == 0);
