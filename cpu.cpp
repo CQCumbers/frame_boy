@@ -157,13 +157,14 @@ void CPU::check_interrupts() {
   // call appropriate interrupt, lower bit priority
   uint8_t interrupt = ffs(mem.read(IF) & mem.read(IE) & 0x1f);
   if (interrupt != 0) {
-    if (halt) { halt = false; ++cycles; }
     if (ime) {
+      if (halt) ++cycles;
       sp -= 2; mem.write16(sp, pc);
-      pc = 0x37 + 0x8 * interrupt;
+      pc = 0x40 + 0x8 * (interrupt - 1);
       mem.writebit(IF, interrupt - 1, false);
       ime = false; cycles += 5;
     }
+    if (halt) halt = false;
   }
 }
 
@@ -995,35 +996,35 @@ unsigned CPU::execute() {
       ime = true; cycles += 3;
       break;
     case 0xc7: // RST 0x00
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x00; cycles += 3;
       break;
     case 0xcf: // RST 0x08
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x08; cycles += 3;
       break;
     case 0xd7: // RST 0x10
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x10; cycles += 3;
       break;
     case 0xdf: // RST 0x18
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x18; cycles += 3;
       break;
     case 0xe7: // RST 0x20
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x20; cycles += 3;
       break;
     case 0xef: // RST 0x28
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x28; cycles += 3;
       break;
     case 0xf7: // RST 0x30
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x30; cycles += 3;
       break;
     case 0xff: // RST 0x38
-      sp -= 2; mem.write16(sp, pc + 2);
+      sp -= 2; mem.write16(sp, pc);
       pc = 0x38; cycles += 3;
       break;
     // Miscellaneous Instructions
@@ -1042,7 +1043,7 @@ unsigned CPU::execute() {
     case 0x00: // NOP
       break;
     default:
-      cout << "Unimplemented opcode "
+      cout << "Unimplemented opcode " << hex
         << (unsigned)mem.read(--pc) << endl;
   }
 
