@@ -14,7 +14,7 @@ void Timer::update(unsigned cpu_cycles) {
   // reset timer when DIV written
   if (mem.read(DIV) != (clock >> 8)) clock = 0;
   // catch up to CPU cycles
-  for (int i = 0; i < cpu_cycles; ++i) {
+  for (unsigned i = 0; i < cpu_cycles; ++i) {
     clock += 4;
     mem.write(DIV, clock >> 8);
     if (tima_scheduled) {

@@ -29,8 +29,9 @@ int main() {
 
   // run to breakpoint, then step
   //uint8_t SD = 0x01; uint8_t SC = 0x02;
+  uint8_t LCDC = 0x40, STAT = 0x41, LY = 0x44, IE = 0xff;
   bool shown = true;
-  while (cpu.get_pc() != 0x225e) { //0x2ad) {
+  while (true) {
     unsigned cycles = cpu.execute();
     timer.update(cycles);
     ppu.update(cycles);
@@ -43,9 +44,6 @@ int main() {
     if (ppu.mode != 0x01) { shown = false; }
   }
 
-  show(ppu);
-
-  uint8_t LCDC = 0x40, STAT = 0x41, LY = 0x44, IE = 0xff;
   while (cin.ignore()) {
     cpu.print();
     cout << hex << "FF40: " << (unsigned)mem.read(LCDC) << " "

@@ -59,13 +59,15 @@ void PPU::update(unsigned cpu_cycles) {
   }
   // reset state when LCD off
   if (!mem.readbit(LCDC, 7)) {
-    cycles = 0; mode = 0x0;
-    mem.write(LY, 0x0);
+    cycles = 0; mode = 0x0; mem.write(LY, 0x0);
+    bool lyc = (mem.read(LYC) == mem.read(LY));
+    mem.write(STAT, (mem.read(STAT) & 0xf8) | (lyc << 2) | mode);
+    return;
   }
   // catch up to CPU cycles
-  for (int i = 0; i < cpu_cycles; ++i) {
+  for (unsigned i = 0; i < cpu_cycles; ++i) {
     ++cycles;
-    // cout << dec << (unsigned)mode << " " << (unsigned)cycles << endl;
+    //cout << dec << (unsigned)mode << " " << (unsigned)cycles << endl;
     switch (mode) {
       case 0x0: // H-BLANK
         if (cycles == 94) {
