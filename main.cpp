@@ -24,24 +24,26 @@ void show(const PPU &ppu) {
 int main() {
   // initialize hardware
   Memory mem("roms/dr-mario.gb");
-  CPU cpu(mem); Timer timer(mem);
-  Joypad joypad(mem); PPU ppu(mem);
+  CPU cpu(mem);
+  PPU ppu(mem);
+  Timer timer(mem);
+  Joypad joypad(mem);
 
   // run to breakpoint, then step
-  //uint8_t SD = 0x01; uint8_t SC = 0x02;
   uint8_t LCDC = 0x40, STAT = 0x41, LY = 0x44, IE = 0xff;
+  //uint8_t SB = 0x01, SC = 0x02;
   bool shown = true;
   while (true) {
     unsigned cycles = cpu.execute();
     timer.update(cycles);
     ppu.update(cycles);
-    joypad.update(cycles);
-    /*if (mem.read(SC) >> 7) {
-      mem.write(SC, SD);
-      cout << (char)mem.read(SD) << flush;
-    }*/
-    if (!shown && ppu.mode == 0x01) { show(ppu); shown = true; }
-    if (ppu.mode != 0x01) { shown = false; }
+    joypad.update();
+    //if (mem.read1h(SC, 7)) {
+    //  mem.write1h(SC, 7, false);
+    //  cout << (char)mem.readh(SB) << flush;
+    //}
+    if (!shown && (mem.readh(STAT) & 0x3) == 1) show(ppu), shown = true;
+    if ((mem.readh(STAT) & 0x3) != 1) shown = false;
   }
 
   while (cin.ignore()) {
@@ -52,6 +54,6 @@ int main() {
     unsigned cycles = cpu.execute();
     timer.update(cycles);
     ppu.update(cycles);
-    joypad.update(cycles);
+    joypad.update();
   }
 }

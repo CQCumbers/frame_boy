@@ -7,12 +7,24 @@ class Joypad {
   private:
     // Internal State
     Memory &mem;
-    static const uint8_t P1 = 0x00, IF = 0x0f;
+    bool last_pressed = false;
+    uint8_t &IF = mem.refh(0x0f), &p1 = mem.refh(0x00);
     
   public:
+    // Input Variables
+    union {
+      struct { uint8_t a: 1, b: 1, select: 1, start: 1, : 4; };
+      uint8_t buttons = 0xff;
+    };
+    union {
+      struct { uint8_t right: 1, left: 1, up: 1, down: 1, : 4; };
+      uint8_t directions = 0xff;
+    };
+
+    // Registers
     // Core Functions
     Joypad(Memory &mem_in);
-    void update(unsigned cpu_cycles);
+    void update();
 };
 
 #endif

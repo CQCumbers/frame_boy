@@ -1,6 +1,6 @@
 # Compile the main executable
 main.exe: main.cpp memory.cpp cpu.cpp timer.cpp joypad.cpp ppu.cpp
-	g++ -Wall -Werror -Wextra -g --std=c++11 main.cpp memory.cpp cpu.cpp timer.cpp joypad.cpp ppu.cpp -o main.exe -O3
+	g++ -Wall -Werror -Wextra -flto -g --std=c++11 main.cpp memory.cpp cpu.cpp timer.cpp joypad.cpp ppu.cpp -o main.exe -O3
 
 # Remove automatically generated files
 clean:

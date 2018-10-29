@@ -7,8 +7,13 @@ struct Flags { uint8_t : 4, c: 1, h: 1, n: 1, z: 1; };
 
 class CPU {
   private:
+    // Internal State
+    Memory &mem;
+    unsigned cycles = 0;
+    bool ime = false, ime_scheduled = false;
+    bool halt = false, stop = false;
+
     // Registers
-    // assume little-endian & GCC extensions
     union {
       struct { Flags f; uint8_t a; };
       uint16_t af = 0x01b0;
@@ -26,12 +31,7 @@ class CPU {
       uint16_t hl = 0x014d;
     };
     uint16_t sp = 0xfffe, pc = 0x0100;
-
-    // Internal State
-    Memory &mem; unsigned cycles = 0;
-    bool ime = false, ime_scheduled = false;
-    bool halt = false, stop = false;
-    static const uint8_t IF = 0x0f, IE = 0xff;
+    uint8_t &IF = mem.refh(0x0f), &IE = mem.refh(0xff);
 
     // Arithmetic Functions
     uint8_t add(uint8_t a, uint8_t b);

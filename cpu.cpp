@@ -155,13 +155,13 @@ inline uint8_t CPU::set(uint8_t n, uint8_t a) {
 
 void CPU::check_interrupts() {
   // call appropriate interrupt, lower bit priority
-  uint8_t interrupt = ffs(mem.read(IF) & mem.read(IE) & 0x1f);
+  uint8_t interrupt = ffs(IF & IE & 0x1f);
   if (interrupt != 0) {
     if (ime) {
       if (halt) ++cycles;
       sp -= 2; mem.write16(sp, pc);
       pc = 0x40 + 0x8 * (interrupt - 1);
-      mem.writebit(IF, interrupt - 1, false);
+      IF = write1(IF, interrupt - 1, false);
       ime = false; cycles += 5;
     }
     if (halt) halt = false;
@@ -418,11 +418,11 @@ unsigned CPU::execute() {
       cycles += 3;
       break;
     case 0xe0: // LDH (n) A
-      mem.write(mem.read(pc++), a);
+      mem.writeh(mem.read(pc++), a);
       cycles += 2;
       break;
     case 0xe2: // LD (C) A
-      mem.write(c, a);
+      mem.writeh(c, a);
       ++cycles;
       break;
     case 0x0a: // LD A (BC)
@@ -438,11 +438,11 @@ unsigned CPU::execute() {
       cycles += 3;
       break;
     case 0xf0: // LDH A (n)
-      a = mem.read(mem.read(pc++));
+      a = mem.readh(mem.read(pc++));
       cycles += 2;
       break;
     case 0xf2: // LD A (C)
-      a = mem.read(c);
+      a = mem.readh(c);
       ++cycles;
       break;
     case 0x22: // LD (HL+) A
