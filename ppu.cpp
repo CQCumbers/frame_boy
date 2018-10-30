@@ -14,7 +14,7 @@ Sprite::Sprite(Memory &mem, uint16_t addr) {
 }
 
 bool Sprite::operator <(const Sprite &r) const {
-  return x < r.x;
+  return x > r.x;
 }
 
 // Drawing Functions
@@ -27,8 +27,7 @@ void PPU::get_sprites() {
   for (uint16_t i = 0xfe00; i < 0xfe9f; i += 4) {
     Sprite sprite(mem, i); // max 10 per line
     if (ly + 16 >= sprite.y && ly + 16 < sprite.y + height) {
-      if (sprites.size() == 10) sprites.pop_front();
-      sprites.push_back(sprite);
+      if (sprites.size() < 10) sprites.push_front(sprite);
     }
     stable_sort(sprites.begin(), sprites.end());
   }
