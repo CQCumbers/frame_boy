@@ -4,11 +4,17 @@
 
 using namespace std;
 
+// Sprite Functions
+
 Sprite::Sprite(Memory &mem, uint16_t addr) {
-  y = mem.read(addr);
-  x = mem.read(addr + 1);
-  tile = mem.read(addr + 2);
-  flags = mem.read(addr + 3);
+  y = mem.ref(addr);
+  x = mem.ref(addr + 1);
+  tile = mem.ref(addr + 2);
+  flags = mem.ref(addr + 3);
+}
+
+bool Sprite::operator <(const Sprite &r) const {
+  return x < r.x;
 }
 
 // Drawing Functions
@@ -24,22 +30,23 @@ void PPU::get_sprites() {
       if (sprites.size() == 10) sprites.pop_front();
       sprites.push_back(sprite);
     }
-    //sort(sprites, [](Sprite &a, Sprite &b));
+    stable_sort(sprites.begin(), sprites.end());
   }
 }
 
 void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset) {
   // find correct tile in map
   uint8_t map_x = (x_offset >> 3) & 0x1f, map_y = (y_offset >> 3) & 0x1f;
-  uint8_t tile = mem.read(map + (map_y << 5) + map_x);
+  uint8_t tile = mem.ref(map + (map_y << 5) + map_x);
   // find correct line in tile
   uint16_t bg_tiles = read1(lcdc, 4) << 11 ? 0x8000 : 0x8800;
   if (bg_tiles != 0x8000) tile ^= 0x80;
   uint8_t tile_x = 7 - (x_offset & 0x7), tile_y = y_offset & 0x7;
-  uint16_t line = mem.read16(bg_tiles + (tile << 4) + (tile_y << 1));
+  uint8_t line = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1));
+  uint8_t lineh = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1) + 1);
   // find correct pixels in line
   for (unsigned i = 0; i < 4; ++i, --tile_x) {
-    uint8_t pixel = (read1(line, tile_x + 8) << 1) | read1(line, tile_x);
+    uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
     pixels[i] = pixel, palettes[i] = bgp;
   }
 }
@@ -52,11 +59,12 @@ void PPU::draw_sprite(Sprite sprite) {
   if (!sprite.xf) tile_x = 7 - tile_x;
   if (sprite.yf) tile_y = 8 + (height16 << 3) - tile_y;
   if (height16) sprite.tile = write1(sprite.tile, 0, tile_y >= 8), tile_y &= 0x7;
-  uint16_t line = mem.read16(0x8000 + (sprite.tile << 4) + (tile_y << 1));
+  uint8_t line = mem.ref(0x8000 + (sprite.tile << 4) + (tile_y << 1));
+  uint8_t lineh = mem.ref(0x8001 + (sprite.tile << 4) + (tile_y << 1));
   // find correct pixels in line
   for (unsigned i = 0; i < 4; ++i, tile_x += (sprite.xf ? 1 : -1)) {
     if (x + i >= sprite.x || x + 8 + i < sprite.x) continue;
-    uint8_t pixel = (read1(line, tile_x + 8) << 1) | read1(line, tile_x);
+    uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
     // check sprite rendering priority
     if (pixel != 0 && (!sprite.p || pixels[i] == 0)) {
       pixels[i] = pixel, palettes[i] = sprite.pal ? obp1 : obp0;
@@ -108,6 +116,7 @@ PPU::PPU(Memory &mem_in): mem(mem_in) {
   // set r/w permission bitmasks
   mem.wmask(0xff41, 0x78);
   mem.wmask(0xff44, 0x0);
+  mem.rmask(0xff46, 0x0);
 }
 
 void PPU::update(unsigned cpu_cycles) {
@@ -115,7 +124,7 @@ void PPU::update(unsigned cpu_cycles) {
   // handle DMA OAM copy
   if (dma != 0xff) dma_src = (dma << 8) - 1, dma = 0xff, dma_i = 0;
   for (unsigned i = 0; dma_i < 161 && i < cpu_cycles; ++i, ++dma_i) {
-    if (dma_i != 0) mem.ref(0xfdff + dma_i) = mem.read(dma_src + dma_i);
+    if (dma_i != 0) mem.ref(0xfdff + dma_i) = mem.ref(dma_src + dma_i);
   }
   // catch up to CPU cycles
   if (read1(lcdc, 7)) {
@@ -127,7 +136,7 @@ void PPU::update(unsigned cpu_cycles) {
             cycles = 0, ++ly, check_lyc();
             unsigned mode = (ly == 144 ? 1 : 2);
             if (mode == 1) IF = write1(IF, 0, true);
-            else mem.wmask_range(0xfe00, 0xfe9f, 0x0);
+            else mem.mask_range(0xfe00, 0xfe9f, 0x0);
             if (read1(stat, 3 + mode)) IF = write1(IF, 1, true);
             stat = (stat & 0xfc) | mode;
           }
@@ -144,7 +153,7 @@ void PPU::update(unsigned cpu_cycles) {
         case 2: // Using OAM
           if (cycles == 19) {
             cycles = x = 0, get_sprites();
-            mem.wmask_range(0x8000, 0x9fff, 0x0);
+            mem.mask_range(0x8000, 0x9fff, 0x0);
             stat = (stat & 0xfc) | 3;
           }
           break;
@@ -152,8 +161,8 @@ void PPU::update(unsigned cpu_cycles) {
           if (cycles >= 3) draw();
           if (x == 160) {
             if (read1(stat, 3)) IF = write1(IF, 1, true);
-            mem.wmask_range(0xfe00, 0xfe9f, 0xff);
-            mem.wmask_range(0x8000, 0x9fff, 0xff);
+            mem.mask_range(0xfe00, 0xfe9f, 0xff);
+            mem.mask_range(0x8000, 0x9fff, 0xff);
             stat = stat & 0xfc;
           }
           break;

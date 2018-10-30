@@ -11,6 +11,7 @@ struct Sprite {
     uint8_t flags;
   };
   Sprite(Memory &mem, uint16_t addr);
+  bool operator <(const Sprite &r) const;
 };
 
 class PPU {
