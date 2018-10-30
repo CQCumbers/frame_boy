@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include "ppu.h"
 
@@ -23,6 +24,7 @@ void PPU::get_sprites() {
       if (sprites.size() == 10) sprites.pop_front();
       sprites.push_back(sprite);
     }
+    //sort(sprites, [](Sprite &a, Sprite &b));
   }
 }
 
@@ -104,8 +106,8 @@ PPU::PPU(Memory &mem_in): mem(mem_in) {
   bgp = 0xfc, IF = 0xe1;
   lcd.fill(0x0);
   // set r/w permission bitmasks
-  mem.mask(0xff41, 0x1f);
-  mem.mask(0xff44, 0x0);
+  mem.wmask(0xff41, 0x78);
+  mem.wmask(0xff44, 0x0);
 }
 
 void PPU::update(unsigned cpu_cycles) {
@@ -113,7 +115,7 @@ void PPU::update(unsigned cpu_cycles) {
   // handle DMA OAM copy
   if (dma != 0xff) dma_src = (dma << 8) - 1, dma = 0xff, dma_i = 0;
   for (unsigned i = 0; dma_i < 161 && i < cpu_cycles; ++i, ++dma_i) {
-    if (dma_i != 0) mem.write(0xfdff + dma_i, mem.read(dma_src + dma_i));
+    if (dma_i != 0) mem.ref(0xfdff + dma_i) = mem.read(dma_src + dma_i);
   }
   // catch up to CPU cycles
   if (read1(lcdc, 7)) {
@@ -125,6 +127,7 @@ void PPU::update(unsigned cpu_cycles) {
             cycles = 0, ++ly, check_lyc();
             unsigned mode = (ly == 144 ? 1 : 2);
             if (mode == 1) IF = write1(IF, 0, true);
+            else mem.wmask_range(0xfe00, 0xfe9f, 0x0);
             if (read1(stat, 3 + mode)) IF = write1(IF, 1, true);
             stat = (stat & 0xfc) | mode;
           }
@@ -141,6 +144,7 @@ void PPU::update(unsigned cpu_cycles) {
         case 2: // Using OAM
           if (cycles == 19) {
             cycles = x = 0, get_sprites();
+            mem.wmask_range(0x8000, 0x9fff, 0x0);
             stat = (stat & 0xfc) | 3;
           }
           break;
@@ -148,6 +152,8 @@ void PPU::update(unsigned cpu_cycles) {
           if (cycles >= 3) draw();
           if (x == 160) {
             if (read1(stat, 3)) IF = write1(IF, 1, true);
+            mem.wmask_range(0xfe00, 0xfe9f, 0xff);
+            mem.wmask_range(0x8000, 0x9fff, 0xff);
             stat = stat & 0xfc;
           }
           break;

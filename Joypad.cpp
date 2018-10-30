@@ -5,8 +5,8 @@ using namespace std;
 // Core Functions
 
 Joypad::Joypad(Memory &mem_in): mem(mem_in) {
-  p1 = 0xcf;
-  mem.mask(0xff00, 0x30);
+  p1 = 0xff;
+  mem.wmask(0xff00, 0x30);
 }
 
 void Joypad::update() {

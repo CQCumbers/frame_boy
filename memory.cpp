@@ -15,16 +15,37 @@ unsigned write1(unsigned num, unsigned index, bool val) {
   else return num & ~(0x1 << index);
 }
 
+// Range Functions
+
+Range::Range(uint16_t addr):
+  start(addr), end(addr) { }
+
+Range::Range(uint16_t start, uint16_t end):
+  start(start), end(end) { }
+
+bool Range::operator <(const Range &r) const {
+  return end < r.start;
+}
+
+bool Range::operator ==(const Range &r) const {
+  return start >= r.start && end <= r.end;
+}
+
 // Core Functions
 
 Memory::Memory(const string &filename) {
   ifstream file(filename, ios::binary);
   assert(file.good());
-  file.read((char*)mem.data(), mem.size());
+  file.read(reinterpret_cast<char*>(mem.data()), mem.size());
+  wmask_range(0x0, 0x7fff, 0x0);
 }
 
-void Memory::mask(uint16_t addr, uint8_t mask) {
-  masks[addr] = mask;
+void Memory::wmask(uint16_t addr, uint8_t mask) {
+  wmasks[addr] = mask;
+}
+
+void Memory::wmask_range(uint16_t start, uint16_t end, uint8_t mask) {
+  wmasks[Range(start, end)] = mask;
 }
 
 // Memory Access Functions
@@ -63,8 +84,8 @@ bool Memory::read1h(uint8_t addr, unsigned index) const {
 }
 
 void Memory::write(uint16_t addr, uint8_t val) {
-  if (masks.count(addr)) val &= masks[addr];
-  mem[addr] = val;
+  if (!wmasks.count(addr)) mem[addr] = val;
+  else mem[addr] = (val & wmasks[addr]) | (mem[addr] & ~wmasks[addr]);
 }
 
 void Memory::writeh(uint8_t addr, uint8_t val) {
@@ -81,8 +102,8 @@ void Memory::write16h(uint8_t addr, uint16_t val) {
 }
 
 void Memory::write1(uint16_t addr, unsigned index, bool val) {
-  if (!masks.count(addr) || read1(masks[addr], index)) {
-    if (val) mem[addr] |= (0x1 << index);
+  if (!wmasks.count(addr) || read1(wmasks[addr], index)) {
+    if (val) mem[addr] |= 0x1 << index;
     else mem[addr] &= ~(0x1 << index);
   }
 }

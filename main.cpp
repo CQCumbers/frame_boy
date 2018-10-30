@@ -53,7 +53,7 @@ int main() {
   );
 
   Context ctx = {
-    Gameboy("roms/cpu_instrs.gb"),
+    Gameboy("roms/dr-mario.gb"),
     array<uint8_t, 160*144*4>(),
     renderer, texture
   };

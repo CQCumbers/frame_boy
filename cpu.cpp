@@ -21,7 +21,7 @@ inline uint16_t CPU::add(uint16_t a, uint16_t b) {
 }
 
 inline uint16_t CPU::offset(uint16_t a, int8_t b) {
-  f.z = f.n = false; 
+  f.z = f.n = false;
   f.c = (a & 0xff) + (b & 0xff) > 0xff;
   f.h = (a & 0xf) + (b & 0xf) > 0xf;
   return a + b;
@@ -36,16 +36,16 @@ inline uint8_t CPU::add_carry(uint8_t a, uint8_t b) {
 }
 
 inline uint8_t CPU::subtract(uint8_t a, uint8_t b) {
-  f.n = true; f.z = (a - b == 0); f.c = b > a;
-  f.h = (uint8_t)((a & 0xf) - (b & 0xf)) > 0xf;
+  f.n = true; f.z = (a - b == 0);
+  f.c = b > a; f.h = (a & 0xf) > (b & 0xf);
   return a - b;
 }
 
 inline uint8_t CPU::subtract_carry(uint8_t a, uint8_t b) {
   uint8_t carry = f.c, res = a - b - f.c;
   f.n = true; f.z = (res == 0);
-  f.c = (uint16_t)(a - b - f.c) > 0xff;
-  f.h = (uint8_t)((a & 0xf) - (b & 0xf) - carry) > 0xf;
+  f.c = static_cast<uint16_t>(a - b - f.c) > 0xff;
+  f.h = static_cast<uint8_t>((a & 0xf) - (b & 0xf) - carry) > 0xf;
   return res;
 }
 
@@ -164,16 +164,15 @@ void CPU::check_interrupts() {
       IF = write1(IF, interrupt - 1, false);
       ime = false; cycles += 5;
     }
-    if (halt) halt = false;
+    halt = false;
   }
 }
 
 unsigned CPU::execute() {
-  check_interrupts();
-  unsigned initial_cycles = cycles;
-  uint16_t u = 0x0; ++cycles;
-  if (halt) return cycles - initial_cycles;
-  if (ime_scheduled) { ime = true; ime_scheduled = false; }
+  unsigned initial_cycles = cycles, u = 0;
+  check_interrupts(); ++cycles;
+  if (halt) return 1;
+  if (ime_scheduled) ime = true, ime_scheduled = false;
 
   switch (mem.read(pc++)) {
     // 8-Bit Load & Store Instructions
@@ -808,7 +807,7 @@ unsigned CPU::execute() {
     case 0x27: // DAA
       // see https://www.reddit.com/r/EmuDev/comments/4ycoix
       if (f.h || (!f.n && (a & 0xf) > 0x9)) u = 0x6;
-      if (f.c || (!f.n && a > 0x99)) { u |= 0x60; f.c = true; }
+      if (f.c || (!f.n && a > 0x99)) u |= 0x60, f.c = true;
       a = f.n ? a - u : a + u;
       f.h = false; f.z = (a == 0);
       break;
@@ -891,36 +890,36 @@ unsigned CPU::execute() {
       pc = hl;
       break;
     case 0xc2: // JP NZ nn
-      if (!f.z) { pc = mem.read16(pc); cycles += 3; }
-      else { pc += 2; cycles += 2; }
+      if (!f.z) pc = mem.read16(pc), cycles += 3;
+      else pc += 2, cycles += 2;
       break;
     case 0xd2: // JP NC nn
-      if (!f.c) { pc = mem.read16(pc); cycles += 3; }
-      else { pc += 2; cycles += 2; }
+      if (!f.c) pc = mem.read16(pc), cycles += 3;
+      else pc += 2, cycles += 2;
       break;
     case 0xca: // JP Z nn
-      if (f.z) { pc = mem.read16(pc); cycles += 3; }
-      else { pc += 2; cycles += 2; }
+      if (f.z) pc = mem.read16(pc), cycles += 3;
+      else pc += 2, cycles += 2;
       break;
     case 0xda: // JP C nn
-      if (f.c) { pc = mem.read16(pc); cycles += 3; }
-      else { pc += 2; cycles += 2; }
+      if (f.c) pc = mem.read16(pc), cycles += 3;
+      else pc += 2, cycles += 2;
       break;
     case 0x18: // JR r
-      pc += (int8_t)mem.read(pc);
+      pc += static_cast<int8_t>(mem.read(pc));
       ++pc; cycles += 2;
       break;
     case 0x20: // JR NZ r
       if (!f.z) {
-        pc += (int8_t)mem.read(pc);
+        pc += static_cast<int8_t>(mem.read(pc));
         ++pc; cycles += 2;
-      } else { ++pc; ++cycles; }
+      } else ++pc, ++cycles;
       break;
     case 0x30: // JR NC r
       if (!f.c) {
-        pc += (int8_t)mem.read(pc);
+        pc += static_cast<int8_t>(mem.read(pc));
         ++pc; cycles += 2;
-      } else { ++pc; ++cycles; }
+      } else ++pc, ++cycles;
       break;
     case 0x28: // JR Z r
       if (f.z) {
@@ -930,9 +929,9 @@ unsigned CPU::execute() {
       break;
     case 0x38: // JR C r
       if (f.c) {
-        pc += (int8_t)mem.read(pc); 
-        ++pc; cycles += 2; 
-      } else { ++pc; ++cycles; }
+        pc += static_cast<int8_t>(mem.read(pc));
+        ++pc; cycles += 2;
+      } else ++pc, ++cycles;
       break;
     case 0xcd: // CALL nn
       sp -= 2; mem.write16(sp, pc + 2);
@@ -943,25 +942,25 @@ unsigned CPU::execute() {
       if (!f.z) { 
         sp -= 2; mem.write16(sp, pc + 2);
         pc = mem.read16(pc); cycles += 5;
-      } else { pc += 2; cycles += 2; }
+      } else pc += 2, cycles += 2;
       break;
     case 0xd4: // CALL NC nn
       if (!f.c) { 
         sp -= 2; mem.write16(sp, pc + 2);
         pc = mem.read16(pc); cycles += 5;
-      } else { pc += 2; cycles += 2; }
+      } else pc += 2, cycles += 2;
       break;
     case 0xcc: // CALL Z nn
       if (f.z) { 
         sp -= 2; mem.write16(sp, pc + 2);
         pc = mem.read16(pc); cycles += 5;
-      } else { pc += 2; cycles += 2; }
+      } else pc += 2, cycles += 2;
       break;
     case 0xdc: // CALL C nn
       if (f.c) { 
         sp -= 2; mem.write16(sp, pc + 2);
         pc = mem.read16(pc); cycles += 5;
-      } else { pc += 2; cycles += 2; }
+      } else pc += 2, cycles += 2;
       break;
     case 0xc9: // RET
       pc = mem.read16(sp); sp += 2;
@@ -971,25 +970,25 @@ unsigned CPU::execute() {
       if (!f.z) {
         pc = mem.read16(sp); sp += 2;
         cycles += 4;
-      } else { ++cycles; }
+      } else ++cycles;
       break;
     case 0xd0: // RET NC
       if (!f.c) {
         pc = mem.read16(sp); sp += 2;
         cycles += 4;
-      } else { ++cycles; }
+      } else ++cycles;
       break;
     case 0xc8: // RET Z
       if (f.z) {
         pc = mem.read16(sp); sp += 2;
         cycles += 4;
-      } else { ++cycles; }
+      } else ++cycles;
       break;
     case 0xd8: // RET C
       if (f.c) {
         pc = mem.read16(sp); sp += 2;
         cycles += 4;
-      } else { ++cycles; }
+      } else ++cycles;
       break;
     case 0xd9: // RETI
       pc = mem.read16(sp); sp += 2;
@@ -1043,8 +1042,9 @@ unsigned CPU::execute() {
     case 0x00: // NOP
       break;
     default:
-      cout << "Unimplemented opcode " << hex
-        << (unsigned)mem.read(--pc) << endl;
+      --pc; cout << "Unimplemented opcode "
+      << hex << (unsigned)mem.read(pc)
+      << " at " << (unsigned)pc << endl;
   }
 
   return cycles - initial_cycles;

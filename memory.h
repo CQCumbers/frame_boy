@@ -5,16 +5,25 @@
 #include <map>
 #include <string>
 
+struct Range {
+  uint16_t start, end;
+  Range(uint16_t addr);
+  Range(uint16_t start, uint16_t end);
+  bool operator <(const Range &r) const;
+  bool operator ==(const Range &r) const;
+};
+
 class Memory {
   private:
     // Internal State
     std::array<uint8_t, 0x10000> mem;
-    std::map<uint16_t, uint8_t> masks;
+    std::map<Range, uint8_t> wmasks;
 
   public:
     // Core Functions
     Memory(const std::string &filename);
-    void mask(uint16_t addr, uint8_t mask);
+    void wmask(uint16_t addr, uint8_t mask);
+    void wmask_range(uint16_t start, uint16_t end, uint8_t mask);
 
     // Memory Access Functions
     uint8_t& ref(uint16_t addr);
