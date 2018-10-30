@@ -67,8 +67,8 @@ class CPU {
     unsigned execute();
 
     // Debug Functions
-    void print();
-    uint16_t get_pc();
+    void print() const;
+    uint16_t get_pc() const;
 };
 
 #endif

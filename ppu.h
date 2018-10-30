@@ -20,7 +20,7 @@ class PPU {
     std::deque<Sprite> sprites;
     std::array<uint8_t, 4> pixels;
     std::array<uint8_t, 4> palettes;
-    std::array<uint8_t, 160 * 144> lcd;
+    std::array<uint8_t, 160*144> lcd;
     unsigned cycles = 0, dma_i = 161;
     uint16_t x = 0, dma_src = 0;
     
@@ -38,12 +38,14 @@ class PPU {
     void draw_sprite(Sprite s);
     void draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset);
     void draw();
+    void check_lyc();
 
   public:
     // Core Functions
     PPU(Memory &mem_in);
     void update(unsigned cpu_cycles);
-    const std::array<uint8_t, 160 * 144> &get_lcd() const;
+    uint8_t get_mode() const;
+    const std::array<uint8_t, 160*144> &get_lcd() const;
 };
 
 #endif

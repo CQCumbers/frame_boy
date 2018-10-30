@@ -1857,7 +1857,8 @@ void CPU::execute_cb() {
 }
 
 // Debug Functions
-void CPU::print() {
+
+void CPU::print() const {
   cout << "PC: " << hex << pc << "\n"
     << "op: " << hex << (unsigned)mem.read(pc) << "\n"
     << " F: "
@@ -1872,6 +1873,6 @@ void CPU::print() {
     << "SP: " << hex << sp << "\n";
 }
 
-uint16_t CPU::get_pc() {
+uint16_t CPU::get_pc() const {
   return pc;
 }
