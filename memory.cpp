@@ -34,9 +34,18 @@ bool Range::operator ==(const Range &r) const {
 // Core Functions
 
 Memory::Memory(const string &filename) {
+  // read cart into memory
   ifstream file(filename, ios::binary);
   assert(file.good());
-  file.read(reinterpret_cast<char*>(mem.data()), 0x8000);
+
+  file.seekg(0, ios::end);
+  streampos size = file.tellg();
+  file.seekg(0, ios::beg);
+  cart.resize(size);
+  file.read(reinterpret_cast<char*>(&cart[0]), size);
+  
+  copy_n(&cart[0], 0x8000, &mem[0]);
+  // set r/w permission bitmasks
   wmask_range(0x0, 0x7fff, 0x0);
 }
 
@@ -59,6 +68,12 @@ void Memory::wmask_range(uint16_t start, uint16_t end, uint8_t mask) {
 void Memory::mask_range(uint16_t start, uint16_t end, uint8_t mask) {
   rmask_range(start, end, mask);
   wmask_range(start, end, mask);
+}
+
+void Memory::swap_rom(unsigned bank) {
+  bank &= (0x2 << rom_size) - 1;
+  copy_n(&cart[bank * 0x4000], 0x4000, &mem[0x4000]);
+  last_rom = bank;
 }
 
 // Memory Access Functions
@@ -101,6 +116,10 @@ bool Memory::read1h(uint8_t addr, unsigned index) const {
 }
 
 void Memory::write(uint16_t addr, uint8_t val) {
+  if (cart_type > 0 && addr >= 0x2000 && addr <= 0x3fff) {
+    val &= 0x1f; if (val == 0) val |= 1;
+    swap_rom(val);
+  }
   if (!wmasks.count(addr)) mem[addr] = val;
   else mem[addr] = (val & wmasks.at(addr)) | (mem[addr] & ~wmasks.at(addr));
 }

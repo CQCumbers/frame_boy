@@ -37,7 +37,7 @@ inline uint8_t CPU::add_carry(uint8_t a, uint8_t b) {
 
 inline uint8_t CPU::subtract(uint8_t a, uint8_t b) {
   f.n = true; f.z = (a - b == 0);
-  f.c = b > a; f.h = (a & 0xf) > (b & 0xf);
+  f.c = b > a; f.h = (a & 0xf) < (b & 0xf);
   return a - b;
 }
 

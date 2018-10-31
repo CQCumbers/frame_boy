@@ -70,7 +70,7 @@ int main() {
 
   // generate context object
   Context ctx = {
-    Gameboy("roms/tetris.gb"),
+    Gameboy("roms/kirby.gb"),
     array<uint8_t, 160*144*4>(),
     map<SDL_Keycode, Input>(),
     renderer, texture
@@ -114,7 +114,7 @@ void show(const array<uint8_t, 160*144> &lcd) {
 
 int main() {
   // initialize hardware
-  Gameboy gb("roms/tetris.gb");
+  Gameboy gb("roms/cpu_instrs.gb");
 
   // run to breakpoint
   uint8_t SB = 0x01, SC = 0x02;

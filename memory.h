@@ -1,6 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <vector>
 #include <array>
 #include <map>
 #include <string>
@@ -16,9 +17,11 @@ struct Range {
 class Memory {
   private:
     // Internal State
+    std::vector<uint8_t> cart;
     std::array<uint8_t, 0x10000> mem;
     std::map<Range, uint8_t> rmasks;
     std::map<Range, uint8_t> wmasks;
+    unsigned last_rom = 0;
     uint8_t &cart_type = ref(0x147);
     uint8_t &rom_size = ref(0x148);
     uint8_t &ram_size = ref(0x149);
@@ -31,6 +34,7 @@ class Memory {
     void wmask(uint16_t addr, uint8_t mask);
     void wmask_range(uint16_t start, uint16_t end, uint8_t mask);
     void mask_range(uint16_t start, uint16_t end, uint8_t mask);
+    void swap_rom(unsigned bank);
 
     // Memory Access Functions
     uint8_t& ref(uint16_t addr);
