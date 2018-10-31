@@ -47,6 +47,7 @@ Memory::Memory(const string &filename) {
   copy_n(&cart[0], 0x8000, &mem[0]);
   // set r/w permission bitmasks
   wmask_range(0x0, 0x7fff, 0x0);
+  mask_range(0xa000, 0xbfff, 0x0);
 }
 
 void Memory::rmask(uint16_t addr, uint8_t mask) {
@@ -117,8 +118,7 @@ bool Memory::read1h(uint8_t addr, unsigned index) const {
 
 void Memory::write(uint16_t addr, uint8_t val) {
   if (cart_type > 0 && addr >= 0x2000 && addr <= 0x3fff) {
-    val &= 0x1f; if (val == 0) val |= 1;
-    swap_rom(val);
+    val &= 0x1f; if (val == 0) val |= 1; swap_rom(val); return;
   }
   if (!wmasks.count(addr)) mem[addr] = val;
   else mem[addr] = (val & wmasks.at(addr)) | (mem[addr] & ~wmasks.at(addr));

@@ -119,7 +119,7 @@ inline uint8_t CPU::shift_left(uint8_t a) {
 }
 
 inline uint8_t CPU::shift_right(uint8_t a) {
-  uint8_t res = a >> 1 | (0x1 << 7);
+  uint8_t res = a >> 1 | (a & 0x80);
   f.n = f.h = false;
   f.z = (res == 0); f.c = a & 0x1;
   return res;
