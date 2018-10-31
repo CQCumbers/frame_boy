@@ -53,7 +53,7 @@ int main() {
   );
 
   Context ctx = {
-    Gameboy("roms/sprite_priority.gb"),
+    Gameboy("roms/kirby.gb"),
     array<uint8_t, 160*144*4>(),
     renderer, texture
   };

@@ -10,4 +10,4 @@ dist/
 .DS_Store
 
 # test roms
-*.gb
+roms/

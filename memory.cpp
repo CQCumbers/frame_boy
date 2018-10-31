@@ -36,7 +36,8 @@ bool Range::operator ==(const Range &r) const {
 Memory::Memory(const string &filename) {
   ifstream file(filename, ios::binary);
   assert(file.good());
-  file.read(reinterpret_cast<char*>(mem.data()), mem.size());
+  file.read(reinterpret_cast<char*>(mem.data()), 0x8000);
+  cart_type = ref(0x147), rom_size = ref(0x148), ram_size = ref(0x149);
   wmask_range(0x0, 0x7fff, 0x0);
 }
 

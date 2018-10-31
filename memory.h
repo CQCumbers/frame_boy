@@ -19,6 +19,7 @@ class Memory {
     std::array<uint8_t, 0x10000> mem;
     std::map<Range, uint8_t> rmasks;
     std::map<Range, uint8_t> wmasks;
+    uint8_t &cart_type, &rom_size, &ram_size;
 
   public:
     // Core Functions
