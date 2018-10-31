@@ -3,28 +3,24 @@
 
 #include "memory.h"
 
+enum class Input {
+  a, b, select, start,
+  right, left, up, down
+};
+
 class Joypad {
   private:
     // Internal State
     Memory &mem;
     bool last_pressed = false;
     uint8_t &IF = mem.refh(0x0f), &p1 = mem.refh(0x00);
-    
-  public:
-    // Input Variables
-    union {
-      struct { uint8_t a: 1, b: 1, select: 1, start: 1, : 4; };
-      uint8_t buttons = 0xff;
-    };
-    union {
-      struct { uint8_t right: 1, left: 1, up: 1, down: 1, : 4; };
-      uint8_t directions = 0xff;
-    };
+    uint8_t buttons = 0xff, directions = 0xff;
 
-    // Registers
+  public:
     // Core Functions
     Joypad(Memory &mem_in);
     void update();
+    void input(Input input_enum, bool val);
 };
 
 #endif

@@ -19,7 +19,9 @@ class Memory {
     std::array<uint8_t, 0x10000> mem;
     std::map<Range, uint8_t> rmasks;
     std::map<Range, uint8_t> wmasks;
-    uint8_t &cart_type, &rom_size, &ram_size;
+    uint8_t &cart_type = ref(0x147);
+    uint8_t &rom_size = ref(0x148);
+    uint8_t &ram_size = ref(0x149);
 
   public:
     // Core Functions
@@ -39,12 +41,12 @@ class Memory {
     uint16_t read16h(uint8_t addr) const;
     bool read1(uint16_t addr, unsigned index) const;
     bool read1h(uint8_t addr, unsigned index) const;
-    void write(uint16_t addr, uint8_t value);
-    void writeh(uint8_t addr, uint8_t value);
-    void write16(uint16_t addr, uint16_t value);
-    void write16h(uint8_t addr, uint16_t value);
-    void write1(uint16_t addr, unsigned index, bool value);
-    void write1h(uint8_t addr, unsigned index, bool value);
+    void write(uint16_t addr, uint8_t val);
+    void writeh(uint8_t addr, uint8_t val);
+    void write16(uint16_t addr, uint16_t val);
+    void write16h(uint8_t addr, uint16_t val);
+    void write1(uint16_t addr, unsigned index, bool val);
+    void write1h(uint8_t addr, unsigned index, bool val);
 };
 
 // Utility Functions
