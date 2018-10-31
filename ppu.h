@@ -32,7 +32,7 @@ class PPU {
     uint8_t &ly = mem.refh(0x44), &lyc = mem.refh(0x45);
     uint8_t &dma = mem.refh(0x46), &bgp = mem.refh(0x47);
     uint8_t &obp0 = mem.refh(0x48), &obp1 = mem.refh(0x49);
-    uint8_t &wx = mem.refh(0x4a), &wy = mem.refh(0x4b);
+    uint8_t &wy = mem.refh(0x4a), &wx = mem.refh(0x4b);
 
     // Drawing Functions
     void get_sprites();

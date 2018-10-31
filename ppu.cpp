@@ -44,7 +44,7 @@ void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset) {
   uint8_t line = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1));
   uint8_t lineh = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1) + 1);
   // find correct pixels in line
-  for (unsigned i = 0; i < 4; ++i, --tile_x) {
+  for (unsigned i = -x_offset & 0x3; i < 4; ++i, --tile_x) {
     uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
     pixels[i] = pixel, palettes[i] = bgp;
   }
@@ -72,28 +72,26 @@ void PPU::draw_sprite(Sprite sprite) {
 }
 
 void PPU::draw() {
+  // draw background or blank
+  pixels.fill(0), palettes.fill(bgp);
   if (read1(lcdc, 0)) {
-    // draw background or window
-    if (!read1(lcdc, 5) || ly < wy || x < wx) {
-      uint16_t bg_map = 0x9800 + (read1(lcdc, 3) << 10);
-      draw_tile(bg_map, scx + x, scy + ly);
-    } else {
-      uint16_t win_map = 0x9800 + (read1(lcdc, 6) << 10);
-      draw_tile(win_map, x - wx, ly - wy);
-    }
-    // draw sprites
-    for (const Sprite sprite: sprites) {
-      if (!(x >= sprite.x || x + 11 < sprite.x)) draw_sprite(sprite);
-    }
-    // apply palette
-    for (unsigned i = 0; i < 4; ++i, ++x) {
-      lcd[ly * 160 + x] = (palettes[i] >> (pixels[i] << 1)) & 0x3;
-    }
-  } else {
-    // draw blank screen
-    for (unsigned i = 0; i < 4; ++i, ++x) {
-      lcd[ly * 160 + x] = 0;
-    }
+    uint16_t bg_map = read1(lcdc, 3) ? 0x9c00 : 0x9800;
+    draw_tile(bg_map, scx + x, scy + ly);
+  }
+  // draw window
+  bool win = read1(lcdc, 5) && ly >= wy && x + 7 >= wx;
+  if (win) {
+    uint16_t win_map = read1(lcdc, 6) ? 0x9c00 : 0x9800;
+    ly -= wy, draw_tile(win_map, x + 7 - wx, ly);
+  }
+  // draw sprites
+  for (const Sprite sprite: sprites) {
+    if (!(x >= sprite.x || x + 11 < sprite.x)) draw_sprite(sprite);
+  }
+  if (win) ly += wy;
+  // apply palette
+  for (unsigned i = 0; i < 4; ++i, ++x) {
+    lcd[ly * 160 + x] = (palettes[i] >> (pixels[i] << 1)) & 0x3;
   }
 }
 
