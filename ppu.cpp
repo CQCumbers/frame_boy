@@ -33,7 +33,7 @@ void PPU::get_sprites() {
   }
 }
 
-void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset) {
+void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset, unsigned start) {
   // find correct tile in map
   uint8_t map_x = (x_offset >> 3) & 0x1f, map_y = (y_offset >> 3) & 0x1f;
   uint8_t tile = mem.ref(map + (map_y << 5) + map_x);
@@ -44,7 +44,7 @@ void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset) {
   uint8_t line = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1));
   uint8_t lineh = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1) + 1);
   // find correct pixels in line
-  for (unsigned i = -x_offset & 0x3; i < 4; ++i, --tile_x) {
+  for (unsigned i = start; i < 4; ++i, --tile_x) {
     uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
     pixels[i] = pixel, palettes[i] = bgp;
   }
@@ -56,7 +56,7 @@ void PPU::draw_sprite(Sprite sprite) {
   unsigned tile_x = x + 8 - sprite.x, tile_y = ly + 16 - sprite.y;
   // check mirroring and height
   if (!sprite.xf) tile_x = 7 - tile_x;
-  if (sprite.yf) tile_y = 8 + (height16 << 3) - tile_y;
+  if (sprite.yf) tile_y = 7 + (height16 << 3) - tile_y;
   if (height16) sprite.tile = write1(sprite.tile, 0, tile_y >= 8), tile_y &= 0x7;
   uint8_t line = mem.ref(0x8000 + (sprite.tile << 4) + (tile_y << 1));
   uint8_t lineh = mem.ref(0x8001 + (sprite.tile << 4) + (tile_y << 1));
@@ -76,13 +76,19 @@ void PPU::draw() {
   pixels.fill(0), palettes.fill(bgp);
   if (read1(lcdc, 0)) {
     uint16_t bg_map = read1(lcdc, 3) ? 0x9c00 : 0x9800;
-    draw_tile(bg_map, scx + x, scy + ly);
+    draw_tile(bg_map, scx + x, scy + ly, 0);
+    draw_tile(bg_map, scx + x + 1, scy + ly, 1);
+    draw_tile(bg_map, scx + x + 2, scy + ly, 2);
+    draw_tile(bg_map, scx + x + 3, scy + ly, 3);
   }
   // draw window
   bool win = read1(lcdc, 5) && ly >= wy && x + 7 >= wx;
   if (win) {
     uint16_t win_map = read1(lcdc, 6) ? 0x9c00 : 0x9800;
-    ly -= wy, draw_tile(win_map, x + 7 - wx, ly);
+    ly -= wy, draw_tile(win_map, x + 7 - wx, ly, 0);
+    draw_tile(win_map, x + 8 - wx, scy + ly, 1);
+    draw_tile(win_map, x + 9 - wx, scy + ly, 2);
+    draw_tile(win_map, x + 10 - wx, scy + ly, 3);
   }
   // draw sprites
   for (const Sprite sprite: sprites) {

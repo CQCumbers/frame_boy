@@ -36,7 +36,7 @@ class PPU {
     // Drawing Functions
     void get_sprites();
     void draw_sprite(Sprite s);
-    void draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset);
+    void draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset, unsigned start);
     void draw();
     void check_lyc();
 
