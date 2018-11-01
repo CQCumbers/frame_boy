@@ -18,15 +18,17 @@ struct Range {
 class Memory {
   private:
     // Internal State
-    std::vector<uint8_t> cart;
+    std::vector<uint8_t> rom, ram;
     std::array<uint8_t, 0x10000> mem;
-    std::map<Range, uint8_t> rmasks;
-    std::map<Range, uint8_t> wmasks;
+    std::map<Range, uint8_t> rmasks, wmasks;
     std::map<Range, std::function<void(uint8_t)>> hooks;
-    unsigned last_rom = 0;
     uint8_t &cart_type = ref(0x147);
     uint8_t &rom_size = ref(0x148);
     uint8_t &ram_size = ref(0x149);
+    unsigned ram_bank = 0;
+    // MBC1 State
+    bool ram_mode = false;
+    unsigned bank = 0;
 
   public:
     // Core Functions
@@ -36,6 +38,7 @@ class Memory {
     void mask(Range addr, uint8_t mask);
     void hook(Range addr, std::function<void(uint8_t)> hook);
     void swap_rom(unsigned bank);
+    void swap_ram(unsigned bank);
 
     // Memory Access Functions
     uint8_t& ref(uint16_t addr);

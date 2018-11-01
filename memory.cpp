@@ -34,29 +34,46 @@ bool Range::operator ==(const Range &r) const {
 // Core Functions
 
 Memory::Memory(const string &filename) {
-  // read cart into memory
+  // read rom into vector
   ifstream file(filename, ios::binary);
   assert(file.good());
 
   file.seekg(0, ios::end);
   streampos size = file.tellg();
   file.seekg(0, ios::beg);
-  cart.resize(size);
-  file.read(reinterpret_cast<char*>(&cart[0]), size);
+  rom.resize(size);
+  file.read(reinterpret_cast<char*>(&rom[0]), size);
+  copy_n(&rom[0], 0x8000, &mem[0]);
+
+  // size rom & ram appropriately
+  rom.resize(0x8000 << rom_size);
+  array<unsigned, 6> ram_sizes = {0, 0, 0, 32, 128, 64};
+  ram.resize(ram_sizes[ram_size] << 10);
   
-  copy_n(&cart[0], 0x8000, &mem[0]);
   // set r/w permission bitmasks
   wmask(Range(0x0, 0x7fff), 0x0);
   mask(Range(0xa000, 0xbfff), 0x0);
-  // create on-write hooks
-  if (cart_type >= 1 && cart_type <= 3) { // MBC 1 
+
+  // setup memory bank controller (MBC1)
+  if (cart_type >= 1 && cart_type <= 3) {
     hook(Range(0x0, 0x1fff), [&](uint8_t val) {
       if ((val & 0xf) != 0xa) wmask(Range(0xa000, 0xbfff), 0x0);
       else wmask(Range(0xa000, 0xbfff), 0xff);
     });
     hook(Range(0x2000, 0x3fff), [&](uint8_t val) {
-      if ((val &= 0x1f) == 0) val |= 1;
-      swap_rom(val);
+      val &= 0x1f; if (val == 0) val = 1; bank = (bank & 0xe0) | val;
+      if (ram_mode) swap_rom(bank & 0xe0); else swap_rom(bank);
+      if (ram_mode) swap_ram((bank >> 5) & 0x3); else swap_ram(0);
+    });
+    hook(Range(0x4000, 0x5fff), [&](uint8_t val) {
+      val &= 0x3, bank = (val << 5) | (bank & 0x1f);
+      if (ram_mode) swap_rom(bank & 0xe0); else swap_rom(bank);
+      if (ram_mode) swap_ram((bank >> 5) & 0x3); else swap_ram(0);
+    });
+    hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
+      ram_mode = val & 0x1;
+      if (ram_mode) swap_rom(bank & 0xe0); else swap_rom(bank);
+      if (ram_mode) swap_ram((bank >> 5) & 0x3); else swap_ram(0);
     });
   }
 }
@@ -79,8 +96,14 @@ void Memory::hook(Range addr, std::function<void(uint8_t)> hook) {
 
 void Memory::swap_rom(unsigned bank) {
   bank &= (0x2 << rom_size) - 1;
-  copy_n(&cart[bank * 0x4000], 0x4000, &mem[0x4000]);
-  last_rom = bank;
+  copy_n(&rom[bank * 0x4000], 0x4000, &mem[0x4000]);
+}
+
+void Memory::swap_ram(unsigned bank) {
+  bank &= (ram.size() >> 13) - 1;
+  copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
+  copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);
+  ram_bank = bank;
 }
 
 // Memory Access Functions

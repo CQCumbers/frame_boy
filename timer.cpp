@@ -20,7 +20,7 @@ void Timer::update(unsigned cpu_cycles) {
       tima = tma, IF = write1(IF, 2, true);
       tima_scheduled = false;
     }
-    bool bit = on && (clock >> freq_to_bit[freq]) & 0x1;
+    bool bit = on && read1(clock, freq_to_bit[freq]);
     if (!bit && last_bit) ++tima;
     tima_scheduled = (tima == 0xff), last_bit = bit;
   }
