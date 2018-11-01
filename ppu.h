@@ -26,13 +26,12 @@ class PPU {
     uint16_t x = 0, dma_src = 0;
     
     // Registers
-    uint8_t &IF = mem.refh(0x0f);
     uint8_t &lcdc = mem.refh(0x40), &stat = mem.refh(0x41);
     uint8_t &scy = mem.refh(0x42), &scx = mem.refh(0x43);
     uint8_t &ly = mem.refh(0x44), &lyc = mem.refh(0x45);
-    uint8_t &dma = mem.refh(0x46), &bgp = mem.refh(0x47);
-    uint8_t &obp0 = mem.refh(0x48), &obp1 = mem.refh(0x49);
-    uint8_t &wy = mem.refh(0x4a), &wx = mem.refh(0x4b);
+    uint8_t &bgp = mem.refh(0x47), &obp0 = mem.refh(0x48);
+    uint8_t &obp1 = mem.refh(0x49), &wy = mem.refh(0x4a);
+    uint8_t &wx = mem.refh(0x4b), &IF = mem.refh(0x0f);
 
     // Drawing Functions
     void get_sprites();

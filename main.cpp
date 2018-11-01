@@ -117,22 +117,26 @@ int main() {
   Gameboy gb("roms/cpu_instrs.gb");
 
   // run to breakpoint
-  uint8_t SB = 0x01, SC = 0x02;
+  uint8_t &sb = gb.mem.refh(0x01);
+  uint8_t &sc = gb.mem.refh(0x02);
   while (true) {
     show(gb.update());
-    if (gb.mem.read1h(SC, 7)) {
-      gb.mem.write1h(SC, 7, false);
-      cout << (char)gb.mem.readh(SB) << flush;
+    if (read1(sc, 7)) {
+      sc = write1(sc, 7, false);
+      cout << (char)sb << flush;
     }
   }
 
   // step one instruction
-  uint8_t LCDC = 0x40, STAT = 0x41, LY = 0x44, IE = 0xff;
+  uint8_t &lcdc = gb.mem.refh(0x40);
+  uint8_t &stat = gb.mem.refh(0x41);
+  uint8_t &ly = gb.mem.refh(0x44);
+  uint8_t &ie = gb.mem.refh(0xff);
   while (cin.ignore()) {
     gb.print();
-    cout << hex << "FF40: " << (unsigned)gb.mem.read(LCDC) << " "
-      << (unsigned)gb.mem.read(STAT) << " " << (unsigned)gb.mem.read(LY) << endl;
-    cout << hex << "IE: " << (unsigned)gb.mem.read(IE) << endl;
+    cout << hex << "FF40: " << (unsigned)lcdc << " "
+      << (unsigned)stat << " " << (unsigned)ly << endl;
+    cout << hex << "IE: " << (unsigned)ie << endl;
     gb.step();
   }
 }

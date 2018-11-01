@@ -6,11 +6,12 @@ using namespace std;
 
 Timer::Timer(Memory &mem_in): mem(mem_in) {
   div = clock >> 8;
+  // reset timer on DIV write
+  mem.wmask(0xff04, 0x0);
+  mem.hook(0xff04, [&](uint8_t) { clock = 0; });
 }
 
 void Timer::update(unsigned cpu_cycles) {
-  // reset timer when DIV written
-  if (div != clock >> 8) clock = 0;
   uint8_t on = read1(tac, 2), freq = tac & 0x3;
   // catch up to CPU cycles
   for (unsigned i = 0; i < cpu_cycles; ++i) {

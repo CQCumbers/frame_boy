@@ -96,7 +96,6 @@ void PPU::draw() {
 }
 
 void PPU::check_lyc() {
-  // check LYC interrupt
   bool lyc_equal = lyc == ly;
   stat = write1(stat, 2, lyc_equal);
   if (read1(stat, 6) && lyc_equal) IF = write1(IF, 1, true);
@@ -107,33 +106,37 @@ void PPU::check_lyc() {
 PPU::PPU(Memory &mem_in): mem(mem_in) {
   // set initial register values
   lcdc = 0x91, stat = 0x81;
-  ly = 0x90, dma = 0xff;
-  bgp = 0xfc, IF = 0xe1;
-  lcd.fill(0x0);
+  ly = 0x90, bgp = 0xfc,
+  IF = 0xe1, lcd.fill(0x0);
   // set r/w permission bitmasks
   mem.wmask(0xff41, 0x78);
   mem.wmask(0xff44, 0x0);
   mem.rmask(0xff46, 0x0);
+  // create on-write hooks
+  mem.hook(0xff46, [&](uint8_t val) {
+    dma_src = (val << 8) - 1, dma_i = 0;
+  });
+  mem.hook(0xff45, [&](uint8_t val) {
+    stat = write1(stat, 2, ly == val);
+    if (read1(stat, 6) && ly == val) IF = write1(IF, 1, true);
+  });
 }
 
 void PPU::update(unsigned cpu_cycles) {
-  check_lyc();
   // handle DMA OAM copy
-  if (dma != 0xff) dma_src = (dma << 8) - 1, dma = 0xff, dma_i = 0;
   for (unsigned i = 0; dma_i < 161 && i < cpu_cycles; ++i, ++dma_i) {
     if (dma_i != 0) mem.ref(0xfdff + dma_i) = mem.ref(dma_src + dma_i);
   }
-  // catch up to CPU cycles
+  // change mode & draw lcd
   if (read1(lcdc, 7)) {
     for (unsigned i = 0; i < cpu_cycles; ++i, ++cycles) {
-      // change mode & draw lcd
       switch (stat & 0x3) {
         case 0: // H-BLANK
           if (cycles == 93) {
             cycles = 0, ++ly, check_lyc();
             unsigned mode = (ly == 144 ? 1 : 2);
             if (mode == 1) IF = write1(IF, 0, true);
-            else mem.mask_range(0xfe00, 0xfe9f, 0x0);
+            else mem.mask(Range(0xfe00, 0xfe9f), 0x0);
             if (read1(stat, 3 + mode)) IF = write1(IF, 1, true);
             stat = (stat & 0xfc) | mode;
           }
@@ -150,7 +153,7 @@ void PPU::update(unsigned cpu_cycles) {
         case 2: // Using OAM
           if (cycles == 19) {
             cycles = x = 0, get_sprites();
-            mem.mask_range(0x8000, 0x9fff, 0x0);
+            mem.mask(Range(0x8000, 0x9fff), 0x0);
             stat = (stat & 0xfc) | 3;
           }
           break;
@@ -158,8 +161,8 @@ void PPU::update(unsigned cpu_cycles) {
           if (cycles >= 3) draw();
           if (x == 160) {
             if (read1(stat, 3)) IF = write1(IF, 1, true);
-            mem.mask_range(0xfe00, 0xfe9f, 0xff);
-            mem.mask_range(0x8000, 0x9fff, 0xff);
+            mem.mask(Range(0xfe00, 0xfe9f), 0xff);
+            mem.mask(Range(0x8000, 0x9fff), 0xff);
             stat = stat & 0xfc;
           }
           break;

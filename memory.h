@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <map>
+#include <functional>
 #include <string>
 
 struct Range {
@@ -21,6 +22,7 @@ class Memory {
     std::array<uint8_t, 0x10000> mem;
     std::map<Range, uint8_t> rmasks;
     std::map<Range, uint8_t> wmasks;
+    std::map<Range, std::function<void(uint8_t)>> hooks;
     unsigned last_rom = 0;
     uint8_t &cart_type = ref(0x147);
     uint8_t &rom_size = ref(0x148);
@@ -29,11 +31,10 @@ class Memory {
   public:
     // Core Functions
     Memory(const std::string &filename);
-    void rmask(uint16_t addr, uint8_t mask);
-    void rmask_range(uint16_t start, uint16_t end, uint8_t mask);
-    void wmask(uint16_t addr, uint8_t mask);
-    void wmask_range(uint16_t start, uint16_t end, uint8_t mask);
-    void mask_range(uint16_t start, uint16_t end, uint8_t mask);
+    void rmask(Range addr, uint8_t mask);
+    void wmask(Range addr, uint8_t mask);
+    void mask(Range addr, uint8_t mask);
+    void hook(Range addr, std::function<void(uint8_t)> hook);
     void swap_rom(unsigned bank);
 
     // Memory Access Functions
@@ -43,14 +44,10 @@ class Memory {
     uint8_t readh(uint8_t addr) const;
     uint16_t read16(uint16_t addr) const;
     uint16_t read16h(uint8_t addr) const;
-    bool read1(uint16_t addr, unsigned index) const;
-    bool read1h(uint8_t addr, unsigned index) const;
     void write(uint16_t addr, uint8_t val);
     void writeh(uint8_t addr, uint8_t val);
     void write16(uint16_t addr, uint16_t val);
     void write16h(uint8_t addr, uint16_t val);
-    void write1(uint16_t addr, unsigned index, bool val);
-    void write1h(uint8_t addr, unsigned index, bool val);
 };
 
 // Utility Functions

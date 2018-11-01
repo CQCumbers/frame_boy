@@ -46,29 +46,35 @@ Memory::Memory(const string &filename) {
   
   copy_n(&cart[0], 0x8000, &mem[0]);
   // set r/w permission bitmasks
-  wmask_range(0x0, 0x7fff, 0x0);
-  mask_range(0xa000, 0xbfff, 0x0);
+  wmask(Range(0x0, 0x7fff), 0x0);
+  mask(Range(0xa000, 0xbfff), 0x0);
+  // create on-write hooks
+  if (cart_type >= 1 && cart_type <= 3) { // MBC 1 
+    hook(Range(0x0, 0x1fff), [&](uint8_t val) {
+      if ((val & 0xf) != 0xa) wmask(Range(0xa000, 0xbfff), 0x0);
+      else wmask(Range(0xa000, 0xbfff), 0xff);
+    });
+    hook(Range(0x2000, 0x3fff), [&](uint8_t val) {
+      if ((val &= 0x1f) == 0) val |= 1;
+      swap_rom(val);
+    });
+  }
 }
 
-void Memory::rmask(uint16_t addr, uint8_t mask) {
+void Memory::rmask(Range addr, uint8_t mask) {
   rmasks[addr] = mask;
 }
 
-void Memory::rmask_range(uint16_t start, uint16_t end, uint8_t mask) {
-  rmasks[Range(start, end)] = mask;
-}
-
-void Memory::wmask(uint16_t addr, uint8_t mask) {
+void Memory::wmask(Range addr, uint8_t mask) {
   wmasks[addr] = mask;
 }
 
-void Memory::wmask_range(uint16_t start, uint16_t end, uint8_t mask) {
-  wmasks[Range(start, end)] = mask;
+void Memory::mask(Range addr, uint8_t mask) {
+  rmask(addr, mask), wmask(addr, mask);
 }
 
-void Memory::mask_range(uint16_t start, uint16_t end, uint8_t mask) {
-  rmask_range(start, end, mask);
-  wmask_range(start, end, mask);
+void Memory::hook(Range addr, std::function<void(uint8_t)> hook) {
+  hooks[addr] = hook;
 }
 
 void Memory::swap_rom(unsigned bank) {
@@ -79,7 +85,7 @@ void Memory::swap_rom(unsigned bank) {
 
 // Memory Access Functions
 
-// for fast r/w without masks
+// for access without masks & hooks
 uint8_t& Memory::ref(uint16_t addr) {
   return mem[addr];
 }
@@ -105,21 +111,8 @@ uint16_t Memory::read16h(uint8_t addr) const {
   return read16(0xff00 + addr);
 }
 
-bool Memory::read1(uint16_t addr, unsigned index) const {
-  return (mem[addr] >> index) & 0x1;
-}
-
-bool Memory::read1h(uint8_t addr, unsigned index) const {
-  if (!rmasks.count(addr) || !read1(rmasks.at(addr), index)) {
-    return read1(0xff00 + addr, index);
-  }
-  return true;
-}
-
 void Memory::write(uint16_t addr, uint8_t val) {
-  if (cart_type > 0 && addr >= 0x2000 && addr <= 0x3fff) {
-    val &= 0x1f; if (val == 0) val |= 1; swap_rom(val); return;
-  }
+  if (hooks.count(addr)) hooks[addr](val);
   if (!wmasks.count(addr)) mem[addr] = val;
   else mem[addr] = (val & wmasks.at(addr)) | (mem[addr] & ~wmasks.at(addr));
 }
@@ -135,15 +128,4 @@ void Memory::write16(uint16_t addr, uint16_t val) {
 
 void Memory::write16h(uint8_t addr, uint16_t val) {
   write16(0xff00 + addr, val);
-}
-
-void Memory::write1(uint16_t addr, unsigned index, bool val) {
-  if (!wmasks.count(addr) || read1(wmasks.at(addr), index)) {
-    if (val) mem[addr] |= 0x1 << index;
-    else mem[addr] &= ~(0x1 << index);
-  }
-}
-
-void Memory::write1h(uint8_t addr, unsigned index, bool val) {
-  write1(0xff00 + addr, index, val);
 }
