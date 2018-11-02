@@ -1872,7 +1872,3 @@ void CPU::print() const {
     << "HL: " << hex << hl << "\n"
     << "SP: " << hex << sp << "\n";
 }
-
-uint16_t CPU::get_pc() const {
-  return pc;
-}

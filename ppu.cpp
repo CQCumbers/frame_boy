@@ -181,11 +181,3 @@ void PPU::update(unsigned cpu_cycles) {
     stat = stat & 0xfc;
   }
 }
-
-uint8_t PPU::get_mode() const {
-  return stat & 0x3;
-}
-
-const array<uint8_t, 160*144> &PPU::get_lcd() const {
-  return lcd;
-}

@@ -54,7 +54,14 @@ class Memory {
 };
 
 // Utility Functions
-bool read1(unsigned num, unsigned index);
-unsigned write1(unsigned num, unsigned index, bool val);
+
+inline bool read1(unsigned num, unsigned index) {
+  return (num >> index) & 0x1;
+}
+
+inline unsigned write1(unsigned num, unsigned index, bool val) {
+  if (val) return num | (0x1 << index);
+  else return num & ~(0x1 << index);
+}
 
 #endif

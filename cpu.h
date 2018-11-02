@@ -68,7 +68,7 @@ class CPU {
 
     // Debug Functions
     void print() const;
-    uint16_t get_pc() const;
+    uint16_t get_pc() const { return pc; }
 };
 
 #endif

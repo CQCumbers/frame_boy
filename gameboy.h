@@ -21,7 +21,7 @@ struct Gameboy {
   void input(Input input_enum, bool val);
 
   // Debug Functions
-  void print() const;
+  void print() const { cpu.print(); }
 };
 
 #endif

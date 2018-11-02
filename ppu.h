@@ -44,8 +44,8 @@ class PPU {
     // Core Functions
     PPU(Memory &mem_in);
     void update(unsigned cpu_cycles);
-    uint8_t get_mode() const;
-    const std::array<uint8_t, 160*144> &get_lcd() const;
+    uint8_t get_mode() const { return stat & 0x3; }
+    const std::array<uint8_t, 160*144> &get_lcd() const { return lcd; }
 };
 
 #endif

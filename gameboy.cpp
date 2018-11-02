@@ -24,9 +24,3 @@ const array<uint8_t, 160*144> &Gameboy::update() {
 void Gameboy::input(Input input_enum, bool val) {
   joypad.input(input_enum, val);
 }
-
-// Debug Functions
-
-void Gameboy::print() const {
-  cpu.print();
-}

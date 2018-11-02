@@ -4,17 +4,6 @@
 
 using namespace std;
 
-// Utility Functions
-
-bool read1(unsigned num, unsigned index) {
-  return (num >> index) & 0x1;
-}
-
-unsigned write1(unsigned num, unsigned index, bool val) {
-  if (val) return num | (0x1 << index);
-  else return num & ~(0x1 << index);
-}
-
 // Range Functions
 
 Range::Range(uint16_t addr):
