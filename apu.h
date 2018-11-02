@@ -1,0 +1,51 @@
+#ifndef APU_H
+#define APU_H
+
+#include "memory.h"
+
+// Channel Types
+enum class CT {
+  square1, square2, wave, noise
+};
+
+class Channel {
+  private:
+    // Internal State
+    Memory &mem;
+    uint16_t timer = 0, lsfr = 0;
+    uint8_t wave_pt = 0;
+    bool on = true;
+    uint8_t waveform();
+    
+    // Registers
+    uint8_t &nr0, &nr1, &nr2, &nr3, &nr4;
+
+  public:
+    // Core Functions
+    CT type;
+    Channel(CT type_in, Memory &mem, uint16_t addr);
+    uint8_t update();
+};
+
+class APU {
+  private:
+    // Internal State
+    Memory &mem;
+    uint8_t sample = 0;
+    std::array<Channel, 4> channels;
+    std::vector<uint8_t> audio;
+
+    // Registers
+    uint8_t &nr50 = mem.refh(0x24);
+    uint8_t &nr51 = mem.refh(0x25);
+    uint8_t &nr52 = mem.refh(0x26);
+  
+  public:
+    // Core Functions
+    APU(Memory &mem_in);
+    void update(unsigned cpu_cycles);
+    const std::vector<uint8_t> &get_audio() const { return audio; }
+    void clear_audio() { audio.clear(); }
+};
+
+#endif

@@ -9,12 +9,17 @@
 using namespace std;
 
 #ifdef __EMSCRIPTEN__
+array<uint32_t, 4> colors = {
+  0xff9bbc0f, 0xff8bac0f, 0xff306230, 0xff0f380f
+};
+
 struct Context {
   Gameboy gameboy;
   array<uint32_t, 160*144> pixels;
   map<SDL_Keycode, Input> bindings;
   SDL_Renderer *renderer;
   SDL_Texture *texture;
+  SDL_AudioDeviceID dev;
 };
 
 void loop(void *arg) {
@@ -25,6 +30,7 @@ void loop(void *arg) {
   map<SDL_Keycode, Input> &bindings = ctx->bindings;
   SDL_Renderer *renderer = ctx->renderer;
   SDL_Texture *texture = ctx->texture;
+  SDL_AudioDeviceID dev = ctx->dev;
 
   // handle keyboard input
   SDL_Event event;
@@ -39,9 +45,14 @@ void loop(void *arg) {
   }
 
   // generate screen texture
-  const array<uint8_t, 160*144> &lcd = gb.update();
-  array<uint32_t, 4> colors = {0xff9bbc0f, 0xff8bac0f, 0xff306230, 0xff0f380f};
+  gb.update();
+  const array<uint8_t, 160*144> &lcd = gb.get_lcd();
   for (unsigned i = 0; i < 160*144; ++i) pixels[i] = colors[lcd[i]];
+
+  // generate audio
+  gb.clear_audio();
+  const vector<uint8_t> &audio = gb.get_audio();
+  SDL_QueueAudio(dev, audio.data(), audio.size());
 
   // draw screen texture
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
@@ -53,11 +64,24 @@ void loop(void *arg) {
 
 int main() {
   // setup SDL
-  SDL_Init(SDL_INIT_VIDEO);
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
   SDL_Window *window;
   SDL_Renderer *renderer;
   SDL_CreateWindowAndRenderer(160 * 3, 144 * 3, 0, &window, &renderer);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+
+  SDL_AudioSpec spec;
+  SDL_AudioDeviceID dev;
+
+  SDL_zero(spec);
+  spec.freq = 4194304 / 8;
+  spec.format = AUDIO_U8;
+  spec.channels = 1;
+  spec.samples = 16384;
+  spec.callback = nullptr;
+
+  dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
+  SDL_PauseAudioDevice(dev, 0);
 
   SDL_Texture *texture = SDL_CreateTexture(
     renderer, SDL_PIXELFORMAT_ARGB8888,
@@ -69,7 +93,7 @@ int main() {
     Gameboy("roms/kirby.gb"),
     array<uint32_t, 160*144>(),
     map<SDL_Keycode, Input>(),
-    renderer, texture
+    renderer, texture, dev
   };
 
   // map SDL keys to joypad buttons
@@ -116,7 +140,8 @@ int main() {
   uint8_t &sb = gb.mem.refh(0x01);
   uint8_t &sc = gb.mem.refh(0x02);
   while (true) {
-    show(gb.update());
+    gb.update();
+    show(gb.get_lcd());
     if (read1(sc, 7)) {
       sc = write1(sc, 7, false);
       cout << (char)sb << flush;

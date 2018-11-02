@@ -169,7 +169,7 @@ void CPU::check_interrupts() {
 }
 
 unsigned CPU::execute() {
-  unsigned initial_cycles = cycles, u = 0;
+  unsigned initial_cycles = cycles;
   check_interrupts(); ++cycles;
   if (halt) return 1;
   if (ime_scheduled) ime = true, ime_scheduled = false;
@@ -804,14 +804,14 @@ unsigned CPU::execute() {
       mem.write(hl, decrement(mem.read(hl)));
       cycles += 2;
       break;
-    case 0x27: // DAA
-      // see https://www.reddit.com/r/EmuDev/comments/4ycoix
+    case 0x27: { // DAA
+      uint8_t u = 0;
       if (f.h || (!f.n && (a & 0xf) > 0x9)) u = 0x6;
       if (f.c || (!f.n && a > 0x99)) u |= 0x60, f.c = true;
       a = f.n ? a - u : a + u;
       f.h = false; f.z = (a == 0);
       break;
-    case 0x2f: // CPL
+    } case 0x2f: // CPL
       f.n = f.h = true; a = ~a;
       break;
     case 0x37: // SCF

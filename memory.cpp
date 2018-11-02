@@ -36,7 +36,7 @@ Memory::Memory(const string &filename) {
 
   // size rom & ram appropriately
   rom.resize(0x8000 << rom_size);
-  array<unsigned, 6> ram_sizes = {0, 0, 0, 32, 128, 64};
+  array<unsigned, 6> ram_sizes = {8, 8, 8, 32, 128, 64};
   ram.resize(ram_sizes[ram_size] << 10);
   
   // set r/w permission bitmasks
