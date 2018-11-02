@@ -86,9 +86,9 @@ void PPU::draw() {
   if (win) {
     uint16_t win_map = read1(lcdc, 6) ? 0x9c00 : 0x9800;
     ly -= wy, draw_tile(win_map, x + 7 - wx, ly, 0);
-    draw_tile(win_map, x + 8 - wx, scy + ly, 1);
-    draw_tile(win_map, x + 9 - wx, scy + ly, 2);
-    draw_tile(win_map, x + 10 - wx, scy + ly, 3);
+    draw_tile(win_map, x + 8 - wx, ly, 1);
+    draw_tile(win_map, x + 9 - wx, ly, 2);
+    draw_tile(win_map, x + 10 - wx, ly, 3);
   }
   // draw sprites
   for (const Sprite sprite: sprites) {
