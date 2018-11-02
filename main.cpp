@@ -11,7 +11,7 @@ using namespace std;
 #ifdef __EMSCRIPTEN__
 struct Context {
   Gameboy gameboy;
-  array<uint8_t, 160*144*4> pixels;
+  array<uint32_t, 160*144> pixels;
   map<SDL_Keycode, Input> bindings;
   SDL_Renderer *renderer;
   SDL_Texture *texture;
@@ -21,7 +21,7 @@ void loop(void *arg) {
   // read variables from context
   Context *ctx = (Context*)arg;
   Gameboy &gb = ctx->gameboy;
-  array<uint8_t, 160*144*4> &pixels = ctx->pixels;
+  array<uint32_t, 160*144> &pixels = ctx->pixels;
   map<SDL_Keycode, Input> &bindings = ctx->bindings;
   SDL_Renderer *renderer = ctx->renderer;
   SDL_Texture *texture = ctx->texture;
@@ -40,12 +40,8 @@ void loop(void *arg) {
 
   // generate screen texture
   const array<uint8_t, 160*144> &lcd = gb.update();
-  for (unsigned i = 0; i < 160 * 144; ++i) {
-    for (unsigned j = 0; j < 3; ++j) {
-      pixels[(i << 2) | j] = 0xff - lcd[i] * 0x55;
-    }
-    pixels[(i << 2) | 3] = 0xff;
-  }
+  array<uint32_t, 4> colors = {0xff9bbc0f, 0xff8bac0f, 0xff306230, 0xff0f380f};
+  for (unsigned i = 0; i < 160*144; ++i) pixels[i] = colors[lcd[i]];
 
   // draw screen texture
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
@@ -71,7 +67,7 @@ int main() {
   // generate context object
   Context ctx = {
     Gameboy("roms/kirby.gb"),
-    array<uint8_t, 160*144*4>(),
+    array<uint32_t, 160*144>(),
     map<SDL_Keycode, Input>(),
     renderer, texture
   };
