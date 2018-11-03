@@ -13,8 +13,8 @@ Channel::Channel(CT type_in, Memory &mem_in, uint16_t addr):
 }
 
 uint8_t Channel::waveform() {
-  if (!on) return false;
-  // get current volume from waveform, 0-16
+  if (!on) return 0x0;
+  // get current volume from waveform, 0-f
   switch (type) {
     case CT::square1: case CT::square2: {
       std::array<uint8_t, 4> duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
@@ -32,6 +32,7 @@ uint8_t Channel::waveform() {
 void Channel::enable() {
   on = true, timer = 0;
   vol_len = nr2 & 0x7, lsfr = 0xff;
+  if (vol_len == 0) vol_len = 8;
   if (type == CT::wave) wave_pt = 0;
   if (len == 0) len = (type != CT::wave ? 64 : 256);
   if (type == CT::wave) {
@@ -67,12 +68,12 @@ uint8_t Channel::update_cycle() {
     }
   }
   --timer;
-  return waveform() << 4; //* volume;
+  return waveform() << 4 * volume;
 }
 
 void Channel::update_frame(uint8_t frame_pt) {
   // update length counter
-  if (!read1(frame_pt, 0) && len > 0) {
+  if (!read1(frame_pt, 0) && read1(nr4, 6) && len > 0) {
     --len; if (len == 0) on = false;
   }
   // update volume envelope
@@ -108,7 +109,6 @@ void APU::update(unsigned cpu_cycles) {
     for (auto &channel : channels) {
       ch_out = channel.update_cycle();
       out = ch_out + out - (ch_out * out) / 256;
-      //if (channel.type == CT::square1) out = ch_out;
     }
     sample = (sample + 1) & 0x3f;
     if (sample == 0) audio.push_back(out);

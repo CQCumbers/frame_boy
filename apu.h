@@ -15,7 +15,7 @@ class Channel {
     bool on = false;
     uint16_t timer = 0, len = 0;
     uint16_t vol_len = 0, lsfr = 0;
-    uint8_t wave_pt = 0, volume = 0;
+    uint8_t wave_pt = 0, volume = 0xf;
     uint8_t waveform();
     void enable();
     
