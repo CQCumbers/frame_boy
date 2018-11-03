@@ -9,12 +9,12 @@ Channel::Channel(CT type_in, Memory &mem_in, uint16_t addr):
   nr2(mem.ref(addr + 2)), nr3(mem.ref(addr + 3)),
   nr4(mem.ref(addr + 4)), type(type_in) {
   if (type == CT::wave) mem.hook(addr + 1, [&](uint8_t val){ len = val; });
-  else mem.hook(addr + 1, [&](uint8_t val){ len = val & 0x3f; }); enable();
+  else mem.hook(addr + 1, [&](uint8_t val){ len = val & 0x3f; });
 }
 
 uint8_t Channel::waveform() {
   if (!on) return false;
-  // get current volume from waveform, 0-8
+  // get current volume from waveform, 0-16
   switch (type) {
     case CT::square1: case CT::square2: {
       std::array<uint8_t, 4> duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
@@ -25,13 +25,13 @@ uint8_t Channel::waveform() {
       if (read1(wave_pt, 0)) sample >>= 4; else sample &= 0xf;
       return sample;
     } case CT::noise:
-      return !read1(lsfr, 0) << 3;
+      return !read1(lsfr, 0) << 2;
   }
 }
 
 void Channel::enable() {
   on = true, timer = 0;
-  vol_len = (nr2 & 0x7), lsfr = 0xff;
+  vol_len = nr2 & 0x7, lsfr = 0xff;
   if (type == CT::wave) wave_pt = 0;
   if (len == 0) len = (type != CT::wave ? 64 : 256);
   if (type == CT::wave) {
@@ -41,7 +41,7 @@ void Channel::enable() {
 }
 
 uint8_t Channel::update_cycle() {
-  //if (!on && read1(nr4, 7)) enable();
+  if (!on && read1(nr4, 7)) enable();
   if (timer == 0) {
     // advance 1 sample in waveform
     switch (type) {
@@ -67,7 +67,7 @@ uint8_t Channel::update_cycle() {
     }
   }
   --timer;
-  return waveform() * volume * 2;
+  return waveform() << 4; //* volume;
 }
 
 void Channel::update_frame(uint8_t frame_pt) {
@@ -79,7 +79,7 @@ void Channel::update_frame(uint8_t frame_pt) {
   if (frame_pt == 7 && vol_len > 0 && type != CT::wave) {
     --vol_len;
     if (read1(nr2, 3) && volume < 0xf) ++volume;
-    else if (read1(nr2, 3) && volume > 0x0) --volume;
+    else if (!read1(nr2, 3) && volume > 0x0) --volume;
   }
 }
 
@@ -107,9 +107,10 @@ void APU::update(unsigned cpu_cycles) {
     uint16_t out = 0, ch_out = 0;
     for (auto &channel : channels) {
       ch_out = channel.update_cycle();
-      if (channel.type == CT::square2) out = ch_out;// + out - (ch_out * out) / 256;
+      out = ch_out + out - (ch_out * out) / 256;
+      //if (channel.type == CT::square1) out = ch_out;
     }
-    sample = (sample + 1) & 0x7;
+    sample = (sample + 1) & 0x3f;
     if (sample == 0) audio.push_back(out);
   }
 }

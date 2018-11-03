@@ -51,7 +51,6 @@ void loop(void *arg) {
 
   // generate audio
   const vector<uint8_t> &audio = gb.get_audio();
-  SDL_ClearQueuedAudio(dev);
   SDL_QueueAudio(dev, audio.data(), audio.size());
   gb.clear_audio();
 
@@ -75,10 +74,10 @@ int main() {
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 2097152 / 8;
+  spec.freq = 2097152 / 64;
   spec.format = AUDIO_U8;
   spec.channels = 1;
-  spec.samples = 8192;
+  spec.samples = 1024;
   spec.callback = nullptr;
 
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
