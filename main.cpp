@@ -50,9 +50,10 @@ void loop(void *arg) {
   for (unsigned i = 0; i < 160*144; ++i) pixels[i] = colors[lcd[i]];
 
   // generate audio
-  gb.clear_audio();
   const vector<uint8_t> &audio = gb.get_audio();
+  SDL_ClearQueuedAudio(dev);
   SDL_QueueAudio(dev, audio.data(), audio.size());
+  gb.clear_audio();
 
   // draw screen texture
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
@@ -74,10 +75,10 @@ int main() {
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 4194304 / 8;
+  spec.freq = 2097152 / 8;
   spec.format = AUDIO_U8;
   spec.channels = 1;
-  spec.samples = 16384;
+  spec.samples = 8192;
   spec.callback = nullptr;
 
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);

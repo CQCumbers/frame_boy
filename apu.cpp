@@ -7,14 +7,17 @@ using namespace std;
 Channel::Channel(CT type_in, Memory &mem_in, uint16_t addr):
   mem(mem_in), nr0(mem.ref(addr)), nr1(mem.ref(addr + 1)),
   nr2(mem.ref(addr + 2)), nr3(mem.ref(addr + 3)),
-  nr4(mem.ref(addr + 4)), type(type_in) { }
+  nr4(mem.ref(addr + 4)), type(type_in) {
+  if (type == CT::wave) mem.hook(addr + 1, [&](uint8_t val){ len = val; });
+  else mem.hook(addr + 1, [&](uint8_t val){ len = val & 0x3f; }); enable();
+}
 
 uint8_t Channel::waveform() {
   if (!on) return false;
   // get current volume from waveform, 0-8
   switch (type) {
     case CT::square1: case CT::square2: {
-      std::array<uint8_t, 4> duty_cycles = {0x1, 0x81, 0x87, 0x7e};
+      std::array<uint8_t, 4> duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
       uint8_t duty = nr1 >> 6;
       return read1(duty_cycles[duty], wave_pt) << 3;
     } case CT::wave: {
@@ -26,24 +29,34 @@ uint8_t Channel::waveform() {
   }
 }
 
-uint8_t Channel::update() {
+void Channel::enable() {
+  on = true, timer = 0;
+  vol_len = (nr2 & 0x7), lsfr = 0xff;
+  if (type == CT::wave) wave_pt = 0;
+  if (len == 0) len = (type != CT::wave ? 64 : 256);
+  if (type == CT::wave) {
+    array<uint8_t, 4> codes = {0x0, 0xf, 0x8, 0x4};
+    volume = codes[(nr2 >> 5) & 0x3];
+  } else volume = nr2 >> 4;
+}
+
+uint8_t Channel::update_cycle() {
+  //if (!on && read1(nr4, 7)) enable();
   if (timer == 0) {
     // advance 1 sample in waveform
     switch (type) {
       case CT::square1: case CT::square2: {
         uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
-        timer = (0x800 - freq) << 2;
+        timer = (0x800 - freq) << 1;
         wave_pt = (wave_pt + 1) & 0x7;
         break;
       } case CT::wave: {
         uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
-        timer = (0x800 - freq) << 1;
+        timer = (0x800 - freq);
         wave_pt = (wave_pt + 1) & 0x1f;
         break;
       } case CT::noise: {
-        std::array<uint8_t, 8> noise_freqs = {
-          8, 16, 32, 48, 64, 80, 96, 112
-        };
+        std::array<uint8_t, 8> noise_freqs = {4, 8, 16, 24, 32, 40, 48, 56};
         uint8_t div_code = nr3 & 0x7;
         bool bit = read1(lsfr, 0) ^ read1(lsfr, 1);
         timer = noise_freqs[div_code];
@@ -54,7 +67,20 @@ uint8_t Channel::update() {
     }
   }
   --timer;
-  return waveform() << 5;
+  return waveform() * volume * 2;
+}
+
+void Channel::update_frame(uint8_t frame_pt) {
+  // update length counter
+  if (!read1(frame_pt, 0) && len > 0) {
+    --len; if (len == 0) on = false;
+  }
+  // update volume envelope
+  if (frame_pt == 7 && vol_len > 0 && type != CT::wave) {
+    --vol_len;
+    if (read1(nr2, 3) && volume < 0xf) ++volume;
+    else if (read1(nr2, 3) && volume > 0x0) --volume;
+  }
 }
 
 // Core Functions
@@ -67,67 +93,23 @@ APU::APU(Memory &mem_in): mem(mem_in), channels({
 }) { }
 
 void APU::update(unsigned cpu_cycles) {
-  for (unsigned i = 0; i < cpu_cycles; ++i) {
-    sample = (sample + 1) & 0x7;
-    for (Channel channel : channels) {
-      uint8_t out = channel.update();
-      if (sample == 0) audio.push_back(out);
+  // update frame sequencer
+  bool bit = read1(div, 5);
+  if (!bit && last_bit) {
+    frame_pt = (frame_pt + 1) & 0x7;
+    for (auto &channel : channels) {
+      channel.update_frame(frame_pt);
     }
   }
+  last_bit = bit;
+  // update wave generator
+  for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
+    uint16_t out = 0, ch_out = 0;
+    for (auto &channel : channels) {
+      ch_out = channel.update_cycle();
+      if (channel.type == CT::square2) out = ch_out;// + out - (ch_out * out) / 256;
+    }
+    sample = (sample + 1) & 0x7;
+    if (sample == 0) audio.push_back(out);
+  }
 }
-
-/*void Channel::read() {
-  switch (type) { // don't keep all these variables, read from refs when necessary
-    case square1:
-      sweep_period = (nr0 >> 4) & 0x7;
-      negate = read1(nr0, 3);
-      shift = nr0 & 0x7;
-      [[fallthrough]];
-    case square2:
-      duty = nr1 >> 6;
-      length_load = nr1 & 0x3f;
-      volume = nr2 >> 4;
-      add_mode = read1(nr2, 3);
-      period = nr2 & 0x7;
-      frequency = ((nr4 & 0x7) << 8) | nr3;
-      trigger = read1(nr4, 7);
-      length_enable = read1(nr4, 6);
-      break;
-    case wave:
-      length_load = nr1;
-      volume = (nr2 >> 5) & 0x3;
-      frequency = ((nr4 & 0x7) << 8) | nr3;
-      trigger = read1(nr4, 7);
-      length_enable = read1(nr4, 6);
-      break;
-    case noise:
-      length_load = nr1 & 0x3f;
-      volume = nr2 >> 4;
-      add_mode = read1(nr2, 3);
-      period = nr2 & 0x7;
-      clock_shift = nr3 >> 4;
-      width_mode = read1(nr3, 3);
-      divisor_code = */
-/*
- * {
-      // apply frame sequencer changes
-      bool bit = read1(div, 5);
-      if (!bit && last_bit) {
-        frame_seq = (frame_seq + 1) & 0x7;
-        for (Channel channel : channels) {
-          if (!read1(frame_seq, 0)) --channel.len; // calc length
-          if (frame_seq == 7) channel.volume = // calc volume
-          if ((frame_seq & 0x3) == 0x2) channel.sweep // clock sweep
-        }
-      }
-      last_bit = bit;
-      for (unsigned i = 0; i < cpu_cycles; ++i) {
-        for (Channel channel : channels) {
-          channel.timer = (channel.timer - 1) % freq;
-          if (timer == 0) {
-            channel.seq = (channel.seq + 1) & 0x7;
-            channel.output = channel.waveform[channel.seq] * channel.volume;
-          }
-        }
-      }
-*/
