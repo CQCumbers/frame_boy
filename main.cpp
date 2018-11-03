@@ -74,10 +74,10 @@ int main() {
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 2097152 / 64;
+  spec.freq = 2097152 / 4;
   spec.format = AUDIO_U8;
   spec.channels = 1;
-  spec.samples = 1024;
+  spec.samples = 16384;
   spec.callback = nullptr;
 
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);

@@ -12,10 +12,11 @@ class Channel {
   private:
     // Internal State
     Memory &mem;
-    bool on = false;
+    bool on = false, sweep_on = false;
     uint16_t timer = 0, len = 0;
-    uint16_t vol_len = 0, lsfr = 0;
     uint8_t wave_pt = 0, volume = 0xf;
+    uint16_t vol_len = 0, lsfr = 0;
+    uint16_t sweep_len = 0, sweep_freq = 0;
     uint8_t waveform();
     void enable();
     
