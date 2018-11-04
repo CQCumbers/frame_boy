@@ -7,12 +7,17 @@
 #include <functional>
 #include <string>
 
-struct Range {
-  uint16_t start, end;
-  Range(uint16_t addr);
-  Range(uint16_t start, uint16_t end);
-  bool operator <(const Range &r) const;
-  bool operator ==(const Range &r) const;
+class Range {
+  private:
+    // Internal State
+    uint16_t start, end;
+
+  public:
+    // Core Functions
+    Range(uint16_t addr);
+    Range(uint16_t start, uint16_t end);
+    bool operator<(const Range &r) const;
+    bool operator==(const Range &r) const;
 };
 
 class Memory {
@@ -26,13 +31,14 @@ class Memory {
     uint8_t &rom_size = ref(0x148);
     uint8_t &ram_size = ref(0x149);
     unsigned ram_bank = 0;
+
     // MBC1 State
     bool ram_mode = false;
     unsigned bank = 0;
 
   public:
     // Core Functions
-    Memory(const std::string &filename);
+    explicit Memory(const std::string &filename);
     void rmask(Range addr, uint8_t mask);
     void wmask(Range addr, uint8_t mask);
     void mask(Range addr, uint8_t mask);

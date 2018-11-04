@@ -69,15 +69,16 @@ int main() {
   SDL_Renderer *renderer;
   SDL_CreateWindowAndRenderer(160 * 3, 144 * 3, 0, &window, &renderer);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+  SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "fast");
 
   SDL_AudioSpec spec;
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 2097152 / 4;
+  spec.freq = 2097152 / 16;
   spec.format = AUDIO_U8;
   spec.channels = 1;
-  spec.samples = 16384;
+  spec.samples = 2048;
   spec.callback = nullptr;
 
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
@@ -109,7 +110,7 @@ int main() {
   };
   
   // create main loop
-  emscripten_set_main_loop_arg(loop, &ctx, -1, 1);
+  emscripten_set_main_loop_arg(loop, &ctx, 60, 1);
 
   // teardown SDL
   SDL_DestroyRenderer(renderer);
@@ -140,11 +141,11 @@ int main() {
   uint8_t &sb = gb.mem.refh(0x01);
   uint8_t &sc = gb.mem.refh(0x02);
   while (true) {
-    gb.update();
-    show(gb.get_lcd());
+    gb.step();
+    //show(gb.get_lcd());
     if (read1(sc, 7)) {
-      sc = write1(sc, 7, false);
       cout << (char)sb << flush;
+      sc = write1(sc, 7, false);
     }
   }
 

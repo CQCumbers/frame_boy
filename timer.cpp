@@ -2,6 +2,10 @@
 
 using namespace std;
 
+// Static Tables
+
+const array<uint8_t, 4> Timer::freq_to_bit = {9, 3, 5, 7};
+
 // Core Functions
 
 Timer::Timer(Memory &mem_in): mem(mem_in) {

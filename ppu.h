@@ -1,24 +1,24 @@
 #ifndef PPU_H
 #define PPU_H
 
-#include <deque>
 #include "memory.h"
 
 struct Sprite {
+  uint16_t addr;
   uint8_t y, x, tile;
   union {
     struct { uint8_t : 4, pal: 1, xf: 1, yf: 1, p: 1; };
     uint8_t flags;
   };
-  Sprite(Memory &mem, uint16_t addr);
-  bool operator <(const Sprite &r) const;
+  Sprite(Memory &mem, uint16_t addr_in);
+  bool operator<(const Sprite &r) const;
 };
 
 class PPU {
   private:
     // Internal State
     Memory &mem;
-    std::deque<Sprite> sprites;
+    std::vector<Sprite> sprites;
     std::array<uint8_t, 4> pixels;
     std::array<uint8_t, 4> palettes;
     std::array<uint8_t, 160*144> lcd;
@@ -42,7 +42,7 @@ class PPU {
 
   public:
     // Core Functions
-    PPU(Memory &mem_in);
+    explicit PPU(Memory &mem_in);
     void update(unsigned cpu_cycles);
     uint8_t get_mode() const { return stat & 0x3; }
     const std::array<uint8_t, 160*144> &get_lcd() const { return lcd; }

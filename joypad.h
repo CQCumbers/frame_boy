@@ -18,7 +18,7 @@ class Joypad {
 
   public:
     // Core Functions
-    Joypad(Memory &mem_in);
+    explicit Joypad(Memory &mem_in);
     void update();
     void input(Input input_enum, bool val);
 };

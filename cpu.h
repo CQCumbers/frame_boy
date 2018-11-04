@@ -63,7 +63,7 @@ class CPU {
 
   public:
     // Core Functions
-    CPU(Memory &mem_in): mem(mem_in) { }
+    explicit CPU(Memory &mem_in): mem(mem_in) { }
     unsigned execute();
 
     // Debug Functions

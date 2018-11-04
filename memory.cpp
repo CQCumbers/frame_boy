@@ -1,5 +1,6 @@
 #include <fstream>
 #include <cassert>
+#include <algorithm>
 #include "memory.h"
 
 using namespace std;
@@ -119,10 +120,6 @@ uint16_t Memory::read16(uint16_t addr) const {
   return (read(addr + 1) << 8) | read(addr);
 }
 
-uint16_t Memory::read16h(uint8_t addr) const {
-  return read16(0xff00 + addr);
-}
-
 void Memory::write(uint16_t addr, uint8_t val) {
   if (hooks.count(addr)) hooks[addr](val);
   if (!wmasks.count(addr)) mem[addr] = val;
@@ -136,8 +133,4 @@ void Memory::writeh(uint8_t addr, uint8_t val) {
 void Memory::write16(uint16_t addr, uint16_t val) {
   write(addr + 1, val >> 8);
   write(addr, val & 0xff);
-}
-
-void Memory::write16h(uint8_t addr, uint16_t val) {
-  write16(0xff00 + addr, val);
 }

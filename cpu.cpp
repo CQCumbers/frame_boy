@@ -169,8 +169,8 @@ void CPU::check_interrupts() {
 }
 
 unsigned CPU::execute() {
-  unsigned initial_cycles = cycles;
-  check_interrupts(); ++cycles;
+  cycles = 1;
+  check_interrupts();
   if (halt) return 1;
   if (ime_scheduled) ime = true, ime_scheduled = false;
 
@@ -1047,7 +1047,7 @@ unsigned CPU::execute() {
       << " at " << (unsigned)pc << endl;
   }
 
-  return cycles - initial_cycles;
+  return cycles;
 }
 
 void CPU::execute_cb() {

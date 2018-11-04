@@ -17,7 +17,7 @@ struct Gameboy {
   Joypad joypad;
 
   // Core Functions
-  Gameboy(const std::string &filename);
+  explicit Gameboy(const std::string &filename);
   void step();
   void update();
   void input(Input input_enum, bool val);

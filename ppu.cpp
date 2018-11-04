@@ -6,15 +6,16 @@ using namespace std;
 
 // Sprite Functions
 
-Sprite::Sprite(Memory &mem, uint16_t addr) {
+Sprite::Sprite(Memory &mem, uint16_t addr_in) {
+  addr = addr_in;
   y = mem.ref(addr);
   x = mem.ref(addr + 1);
   tile = mem.ref(addr + 2);
   flags = mem.ref(addr + 3);
 }
 
-bool Sprite::operator <(const Sprite &r) const {
-  return x > r.x;
+bool Sprite::operator<(const Sprite &r) const {
+  return x > r.x || (x == r.x && addr > r.addr);
 }
 
 // Drawing Functions
@@ -27,10 +28,12 @@ void PPU::get_sprites() {
   for (uint16_t i = 0xfe00; i < 0xfe9f; i += 4) {
     Sprite sprite(mem, i); // max 10 per line
     if (ly + 16 >= sprite.y && ly + 16 < sprite.y + height) {
-      if (sprites.size() < 10) sprites.push_front(sprite);
+      sprites.push_back(sprite);
+      if (sprites.size() == 10) break;
     }
-    stable_sort(sprites.begin(), sprites.end());
   }
+  // sort sprites by priority
+  sort(sprites.begin(), sprites.end());
 }
 
 void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset, unsigned start) {

@@ -10,34 +10,52 @@ enum class CT {
 
 class Channel {
   private:
+    // Static Tables
+    static const std::array<uint8_t, 4> vol_codes;
+    static const std::array<uint8_t, 8> noise_freqs;
+    static const std::array<uint8_t, 4> duty_cycles;
+
     // Internal State
     Memory &mem;
+    const CT type;
+    const uint16_t addr = 0xff10 + static_cast<unsigned>(type) * 5;
+
     bool on = false, sweep_on = false;
-    uint16_t timer = 0, len = 0;
-    uint8_t wave_pt = 0, volume = 0xf;
-    uint16_t vol_len = 0, lsfr = 0;
+    uint8_t wave_pt = 0, volume = 16;
+    uint16_t timer = 0, len = 0, vol_len = 0;
     uint16_t sweep_len = 0, sweep_freq = 0;
-    uint8_t waveform();
+    uint16_t lsfr = 0;
     void enable();
     
     // Registers
-    uint8_t &nr0, &nr1, &nr2, &nr3, &nr4;
+    uint8_t &nr0 = mem.ref(addr);
+    uint8_t &nr1 = mem.ref(addr + 1);
+    uint8_t &nr2 = mem.ref(addr + 2);
+    uint8_t &nr3 = mem.ref(addr + 3);
+    uint8_t &nr4 = mem.ref(addr + 4);
 
   public:
     // Core Functions
-    CT type;
-    Channel(CT type_in, Memory &mem, uint16_t addr);
-    uint8_t update_cycle();
+    Channel(CT type_in, Memory &mem);
     void update_frame(uint8_t frame_pt);
+    void update_cycle();
+    uint8_t get_waveform() const;
+    CT get_type() const { return type; }
 };
 
 class APU {
   private:
     // Internal State
     Memory &mem;
-    uint8_t sample = 0, frame_pt = 0;
+    uint8_t sample = 0;
+    uint8_t frame_pt = 0;
     bool last_bit = 0;
-    std::array<Channel, 4> channels;
+    std::array<Channel, 4> channels = {
+      Channel(CT::square1, mem),
+      Channel(CT::square2, mem),
+      Channel(CT::wave, mem),
+      Channel(CT::noise, mem),
+    };
     std::vector<uint8_t> audio;
 
     // Registers
@@ -48,7 +66,7 @@ class APU {
   
   public:
     // Core Functions
-    APU(Memory &mem_in);
+    explicit APU(Memory &mem_in): mem(mem_in) { }
     void update(unsigned cpu_cycles);
     const std::vector<uint8_t> &get_audio() const { return audio; }
     void clear_audio() { audio.clear(); }
