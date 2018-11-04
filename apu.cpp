@@ -76,7 +76,7 @@ void Channel::update_cycle() {
       } case CT::noise: {
         uint8_t div_code = nr3 & 0x7;
         bool bit = read1(lsfr, 0) ^ read1(lsfr, 1);
-        timer = noise_freqs[div_code];
+        timer = noise_freqs[div_code] << (nr3 >> 4);
         lsfr = (bit << 14) | (lsfr >> 1);
         if (read1(nr3, 3)) lsfr = write1(lsfr, 6, bit);
         return;
@@ -103,6 +103,10 @@ uint8_t Channel::get_waveform() const {
 
 // Core Functions
 
+APU::APU(Memory &mem_in): mem(mem_in) {
+  nr50 = 0x77, nr51 = 0xf3, nr52 = 0xf1;
+}
+
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
   bool bit = read1(div, 5);
@@ -114,14 +118,21 @@ void APU::update(unsigned cpu_cycles) {
   last_bit = bit;
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
+    uint8_t left_out = 0, right_out = 0;
     sample = (sample + 1) & 0xf;
-    if (sample == 0) audio.push_back(0);
     for (Channel &channel : channels) {
       channel.update_cycle();
+      uint16_t ch_out = channel.get_waveform();
       if (sample == 0) {
-        uint16_t ch_out = channel.get_waveform();
-        audio.back() += ch_out - (ch_out * audio.back()) / 256;
+        if (read1(nr51, 4 + static_cast<uint8_t>(channel.get_type())))
+          left_out += ch_out - (ch_out * left_out) / 256;
+        if (read1(nr51, static_cast<uint8_t>(channel.get_type())))
+          right_out += ch_out - (ch_out * right_out) / 256;
       }
+    }
+    if (sample == 0) {
+      audio.push_back(left_out * ((nr50 >> 4) & 0x7) / 8);
+      audio.push_back(right_out * (nr50 & 0x7) / 8);
     }
   }
 }

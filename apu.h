@@ -18,7 +18,7 @@ class Channel {
     // Internal State
     Memory &mem;
     const CT type;
-    const uint16_t addr = 0xff10 + static_cast<unsigned>(type) * 5;
+    const uint16_t addr = 0xff10 + static_cast<uint16_t>(type) * 5;
 
     bool on = false, sweep_on = false;
     uint8_t wave_pt = 0, volume = 16;
@@ -50,12 +50,12 @@ class APU {
     uint8_t sample = 0;
     uint8_t frame_pt = 0;
     bool last_bit = 0;
-    std::array<Channel, 4> channels = {
+    std::array<Channel, 4> channels = {{
       Channel(CT::square1, mem),
       Channel(CT::square2, mem),
       Channel(CT::wave, mem),
       Channel(CT::noise, mem),
-    };
+    }};
     std::vector<uint8_t> audio;
 
     // Registers
@@ -66,7 +66,7 @@ class APU {
   
   public:
     // Core Functions
-    explicit APU(Memory &mem_in): mem(mem_in) { }
+    explicit APU(Memory &mem_in);
     void update(unsigned cpu_cycles);
     const std::vector<uint8_t> &get_audio() const { return audio; }
     void clear_audio() { audio.clear(); }

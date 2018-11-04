@@ -45,14 +45,21 @@ void loop(void *arg) {
   }
 
   // generate screen texture
-  gb.update();
+  // generate audio
+  while (gb.ppu.get_mode() == 1) {
+    gb.step();
+    const vector<uint8_t> &audio = gb.get_audio();
+    SDL_QueueAudio(dev, audio.data(), audio.size());
+    gb.clear_audio();
+  }
+  while (gb.ppu.get_mode() != 1) {
+    gb.step();
+    const vector<uint8_t> &audio = gb.get_audio();
+    SDL_QueueAudio(dev, audio.data(), audio.size());
+    gb.clear_audio();
+  }
   const array<uint8_t, 160*144> &lcd = gb.get_lcd();
   for (unsigned i = 0; i < 160*144; ++i) pixels[i] = colors[lcd[i]];
-
-  // generate audio
-  const vector<uint8_t> &audio = gb.get_audio();
-  SDL_QueueAudio(dev, audio.data(), audio.size());
-  gb.clear_audio();
 
   // draw screen texture
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
@@ -69,7 +76,7 @@ int main() {
   SDL_Renderer *renderer;
   SDL_CreateWindowAndRenderer(160 * 3, 144 * 3, 0, &window, &renderer);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-  SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "fast");
+  SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "best");
 
   SDL_AudioSpec spec;
   SDL_AudioDeviceID dev;
@@ -77,7 +84,7 @@ int main() {
   SDL_zero(spec);
   spec.freq = 2097152 / 16;
   spec.format = AUDIO_U8;
-  spec.channels = 1;
+  spec.channels = 2;
   spec.samples = 2048;
   spec.callback = nullptr;
 
@@ -91,7 +98,7 @@ int main() {
 
   // generate context object
   Context ctx = {
-    Gameboy("roms/kirby.gb"),
+    Gameboy("roms/zelda.gb"),
     array<uint32_t, 160*144>(),
     map<SDL_Keycode, Input>(),
     renderer, texture, dev
@@ -110,7 +117,7 @@ int main() {
   };
   
   // create main loop
-  emscripten_set_main_loop_arg(loop, &ctx, 60, 1);
+  emscripten_set_main_loop_arg(loop, &ctx, -1, 1);
 
   // teardown SDL
   SDL_DestroyRenderer(renderer);
