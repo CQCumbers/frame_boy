@@ -37,7 +37,7 @@ Memory::Memory(const string &filename) {
 
   // size rom & ram appropriately
   rom.resize(0x8000 << rom_size);
-  array<unsigned, 6> ram_sizes = {8, 8, 8, 32, 128, 64};
+  array<unsigned, 6> ram_sizes = {0, 2, 8, 32, 128, 64};
   ram.resize(ram_sizes[ram_size] << 10);
   
   // set r/w permission bitmasks
@@ -47,24 +47,26 @@ Memory::Memory(const string &filename) {
   // setup memory bank controller (MBC1)
   if (cart_type >= 1 && cart_type <= 3) {
     hook(Range(0x0, 0x1fff), [&](uint8_t val) {
-      if ((val & 0xf) != 0xa) wmask(Range(0xa000, 0xbfff), 0x0);
-      else wmask(Range(0xa000, 0xbfff), 0xff);
+      if ((val & 0xf) == 0xa) {
+        if (ram.size() >= 0x2000) mask(Range(0xa000, 0xbfff), 0xff);
+        else mask(Range(0xa000, 0xa000 + ram.size() - 1), 0xff);
+      } else mask(Range(0xa000, 0xbfff), 0x0);
     });
     hook(Range(0x2000, 0x3fff), [&](uint8_t val) {
-      val &= 0x1f; if (val == 0) val = 1; bank = (bank & 0xe0) | val;
-      if (ram_mode) swap_rom(bank & 0xe0); else swap_rom(bank);
-      if (ram_mode) swap_ram((bank >> 5) & 0x3); else swap_ram(0);
+      val &= 0x1f; if (val == 0) val = 1; bank = (bank & 0x60) | val;
+      if (ram_mode) swap_rom(bank & 0x1f), swap_ram(bank >> 5);
+      else swap_rom(bank), swap_ram(0);
     });
     hook(Range(0x4000, 0x5fff), [&](uint8_t val) {
       val &= 0x3, bank = (val << 5) | (bank & 0x1f);
-      if (ram_mode) swap_rom(bank & 0xe0); else swap_rom(bank);
-      if (ram_mode) swap_ram((bank >> 5) & 0x3); else swap_ram(0);
+      if (ram_mode) swap_rom(bank & 0x1f), swap_ram(bank >> 5);
+      else swap_rom(bank), swap_ram(0);
     });
-    hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
-      ram_mode = val & 0x1;
-      if (ram_mode) swap_rom(bank & 0xe0); else swap_rom(bank);
-      if (ram_mode) swap_ram((bank >> 5) & 0x3); else swap_ram(0);
-    });
+    /*hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
+      ram_mode = read1(val, 0);
+      if (ram_mode) swap_rom(bank & 0x1f), swap_ram(bank >> 5);
+      else swap_rom(bank), swap_ram(0);
+    });*/
   }
 }
 
@@ -90,6 +92,7 @@ void Memory::swap_rom(unsigned bank) {
 }
 
 void Memory::swap_ram(unsigned bank) {
+  if (bank == ram_bank || ram.size() <= 0x2000) return;
   bank &= (ram.size() >> 13) - 1;
   copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
   copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);

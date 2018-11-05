@@ -142,7 +142,7 @@ void show(const array<uint8_t, 160*144> &lcd) {
 
 int main() {
   // initialize hardware
-  Gameboy gb("roms/cpu_instrs.gb");
+  Gameboy gb("roms/bits_ram_en.gb");
 
   // run to breakpoint
   uint8_t &sb = gb.mem.refh(0x01);
