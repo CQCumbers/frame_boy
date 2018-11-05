@@ -6,7 +6,8 @@ using namespace std;
 
 Gameboy::Gameboy(const string &filename):
   mem(filename), cpu(mem), ppu(mem),
-  apu(mem), timer(mem), joypad(mem) { }
+  apu(mem),
+  timer(mem), joypad(mem) { }
 
 void Gameboy::step() {
   joypad.update();

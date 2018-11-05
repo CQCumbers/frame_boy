@@ -47,9 +47,9 @@ void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset, unsigned s
   uint8_t line = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1));
   uint8_t lineh = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1) + 1);
   // find correct pixels in line
-  for (unsigned i = start; i < 4; ++i, --tile_x) {
+  for (unsigned i = start; i < 4 && tile_x != 0xff; ++i, --tile_x) {
     uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
-    pixels[i] = pixel, palettes[i] = bgp;
+    pixels[i] = pixel; palettes[i] = bgp;
   }
 }
 
@@ -61,6 +61,7 @@ void PPU::draw_sprite(Sprite sprite) {
   if (!sprite.xf) tile_x = 7 - tile_x;
   if (sprite.yf) tile_y = 7 + (height16 << 3) - tile_y;
   if (height16) sprite.tile = write1(sprite.tile, 0, tile_y >= 8), tile_y &= 0x7;
+  // find correct line in tile
   uint8_t line = mem.ref(0x8000 + (sprite.tile << 4) + (tile_y << 1));
   uint8_t lineh = mem.ref(0x8001 + (sprite.tile << 4) + (tile_y << 1));
   // find correct pixels in line
@@ -69,7 +70,7 @@ void PPU::draw_sprite(Sprite sprite) {
     uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
     // check sprite rendering priority
     if (pixel != 0 && (!sprite.p || pixels[i] == 0)) {
-      pixels[i] = pixel, palettes[i] = sprite.pal ? obp1 : obp0;
+      pixels[i] = pixel; palettes[i] = sprite.pal ? obp1 : obp0;
     }
   }
 }
@@ -94,7 +95,7 @@ void PPU::draw() {
     draw_tile(win_map, x + 10 - wx, ly- wy, 3);
   }
   // draw sprites
-  for (const Sprite sprite: sprites) {
+  for (const Sprite &sprite: sprites) {
     if (!(x >= sprite.x || x + 11 < sprite.x)) draw_sprite(sprite);
   }
   //if (win) ly += wy;
@@ -114,16 +115,16 @@ void PPU::check_lyc() {
 
 PPU::PPU(Memory &mem_in): mem(mem_in) {
   // set initial register values
-  lcdc = 0x91, stat = 0x81;
-  ly = 0x90, bgp = 0xfc,
-  IF = 0xe1, lcd.fill(0x0);
+  lcdc = 0x91; stat = 0x81;
+  ly = 0x90; bgp = 0xfc;
+  IF = 0xe1; lcd.fill(0x0);
   // set r/w permission bitmasks
   mem.wmask(0xff41, 0x78);
   mem.wmask(0xff44, 0x0);
   mem.rmask(0xff46, 0x0);
   // create on-write hooks
   mem.hook(0xff46, [&](uint8_t val) {
-    dma_src = (val << 8) - 1, dma_i = 0;
+    dma_src = (val << 8) - 1; dma_i = 0;
   });
   mem.hook(0xff45, [&](uint8_t val) {
     stat = write1(stat, 2, ly == val);
@@ -142,7 +143,7 @@ void PPU::update(unsigned cpu_cycles) {
       switch (stat & 0x3) {
         case 0: // H-BLANK
           if (cycles == 93) {
-            cycles = 0, ++ly, check_lyc();
+            cycles = 0; ++ly; check_lyc();
             unsigned mode = (ly == 144 ? 1 : 2);
             if (mode == 1) IF = write1(IF, 0, true);
             else mem.mask(Range(0xfe00, 0xfe9f), 0x0);
@@ -153,15 +154,15 @@ void PPU::update(unsigned cpu_cycles) {
         case 1: // V-BLANK
           if (cycles == 113) {
             if (ly == 154) {
-              ly = -1, stat = (stat & 0xfc) | 2;
+              ly = -1; stat = (stat & 0xfc) | 2;
               if (read1(stat, 5)) IF = write1(IF, 1, true);
             }
-            cycles = 0, ++ly, check_lyc();
+            cycles = 0; ++ly; check_lyc();
           }
           break;
         case 2: // Using OAM
           if (cycles == 19) {
-            cycles = x = 0, get_sprites();
+            cycles = x = 0; get_sprites();
             mem.mask(Range(0x8000, 0x9fff), 0x0);
             stat = (stat & 0xfc) | 3;
           }

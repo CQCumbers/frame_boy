@@ -60,44 +60,33 @@ void Channel::update_frame(uint8_t frame_pt) {
 }
 
 void Channel::update_cycle() {
-  if (timer-- == 0) {
-    // advance 1 sample in waveform
-    switch (type) {
-      case CT::square1: case CT::square2: {
-        uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
-        timer = (0x800 - freq) << 1;
-        wave_pt = (wave_pt + 1) & 0x7;
-        return;
-      } case CT::wave: {
-        uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
-        timer = (0x800 - freq);
-        wave_pt = (wave_pt + 1) & 0x1f;
-        return;
-      } case CT::noise: {
-        uint8_t div_code = nr3 & 0x7;
-        bool bit = read1(lsfr, 0) ^ read1(lsfr, 1);
-        timer = noise_freqs[div_code] << (nr3 >> 4);
-        lsfr = (bit << 14) | (lsfr >> 1);
-        if (read1(nr3, 3)) lsfr = write1(lsfr, 6, bit);
-        return;
-      }
-    }
-  }
-}
-
-uint8_t Channel::get_waveform() const {
-  // get current waveform & volume
-  if (!on) return 0;
+  if (timer-- != 0) return;
+  // advance 1 sample in waveform
   switch (type) {
     case CT::square1: case CT::square2: {
+      uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
+      timer = (0x800 - freq) << 1;
+      wave_pt = (wave_pt + 1) & 0x7;
       uint8_t duty = nr1 >> 6;
-      return read1(duty_cycles[duty], wave_pt) * volume;
+      output = read1(duty_cycles[duty], wave_pt) * volume;
+      break;
     } case CT::wave: {
+      uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
+      timer = (0x800 - freq);
+      wave_pt = (wave_pt + 1) & 0x1f;
       uint8_t sample = mem.refh(0x30 + (wave_pt >> 1));
       if (read1(wave_pt, 0)) sample >>= 4; else sample &= 0xf;
-      return sample >> volume;
-    } case CT::noise:
-      return !read1(lsfr, 0) * volume;
+      output = sample >> volume;
+      break;
+    } case CT::noise: {
+      uint8_t div_code = nr3 & 0x7;
+      bool bit = read1(lsfr, 0) ^ read1(lsfr, 1);
+      timer = noise_freqs[div_code] << (nr3 >> 4);
+      lsfr = (bit << 14) | (lsfr >> 1);
+      if (read1(nr3, 3)) lsfr = write1(lsfr, 6, bit);
+      output = !read1(lsfr, 0) * volume;
+      break;
+    }
   }
 }
 
@@ -119,11 +108,11 @@ void APU::update(unsigned cpu_cycles) {
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
     uint8_t left_out = 0, right_out = 0;
-    sample = (sample + 1) & 0xf;
+    sample = (sample + 1) & 0x3f;
     for (Channel &channel : channels) {
       channel.update_cycle();
-      uint16_t ch_out = channel.get_waveform();
       if (sample == 0) {
+        uint16_t ch_out = channel.get_output();
         if (read1(nr51, 4 + static_cast<uint8_t>(channel.get_type())))
           left_out += ch_out - (ch_out * left_out) / 256;
         if (read1(nr51, static_cast<uint8_t>(channel.get_type())))

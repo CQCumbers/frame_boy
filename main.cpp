@@ -1,14 +1,13 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-#include <SDL2/SDL.h>
 #endif
 
+#include <SDL2/SDL.h>
 #include <iostream>
 #include "gameboy.h"
 
 using namespace std;
 
-#ifdef __EMSCRIPTEN__
 array<uint32_t, 4> colors = {
   0xff9bbc0f, 0xff8bac0f, 0xff306230, 0xff0f380f
 };
@@ -82,10 +81,10 @@ int main() {
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 2097152 / 16;
+  spec.freq = 2097152 / 64;
   spec.format = AUDIO_U8;
   spec.channels = 2;
-  spec.samples = 2048;
+  spec.samples = 4096;
   spec.callback = nullptr;
 
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
@@ -98,7 +97,7 @@ int main() {
 
   // generate context object
   Context ctx = {
-    Gameboy("roms/zelda.gb"),
+    Gameboy("roms/kirby.gb"),
     array<uint32_t, 160*144>(),
     map<SDL_Keycode, Input>(),
     renderer, texture, dev
@@ -117,7 +116,11 @@ int main() {
   };
   
   // create main loop
+  #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop_arg(loop, &ctx, -1, 1);
+  #else
+  while (true) loop(&ctx);
+  #endif
 
   // teardown SDL
   SDL_DestroyRenderer(renderer);
@@ -125,7 +128,6 @@ int main() {
   SDL_Quit();
 }
 
-#else
 void show(const array<uint8_t, 160*144> &lcd) {
   array<string, 4> pixels = {" ", ".", "o", "M"};
   for (int j = 0; j < 160; ++j) {
@@ -140,9 +142,9 @@ void show(const array<uint8_t, 160*144> &lcd) {
   }
 }
 
-int main() {
+int old_main() {
   // initialize hardware
-  Gameboy gb("roms/bits_ram_en.gb");
+  Gameboy gb("roms/zelda.gb");
 
   // run to breakpoint
   uint8_t &sb = gb.mem.refh(0x01);
@@ -169,5 +171,3 @@ int main() {
     gb.step();
   }
 }
-
-#endif

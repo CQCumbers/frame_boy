@@ -58,15 +58,15 @@ Memory::Memory(const string &filename) {
       else swap_rom(bank), swap_ram(0);
     });
     hook(Range(0x4000, 0x5fff), [&](uint8_t val) {
-      val &= 0x3, bank = (val << 5) | (bank & 0x1f);
+      val &= 0x3; bank = (val << 5) | (bank & 0x1f);
       if (ram_mode) swap_rom(bank & 0x1f), swap_ram(bank >> 5);
       else swap_rom(bank), swap_ram(0);
     });
-    /*hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
+    hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
       ram_mode = read1(val, 0);
       if (ram_mode) swap_rom(bank & 0x1f), swap_ram(bank >> 5);
       else swap_rom(bank), swap_ram(0);
-    });*/
+    });
   }
 }
 
@@ -79,7 +79,8 @@ void Memory::wmask(Range addr, uint8_t mask) {
 }
 
 void Memory::mask(Range addr, uint8_t mask) {
-  rmask(addr, mask), wmask(addr, mask);
+  rmask(addr, mask);
+  wmask(addr, mask);
 }
 
 void Memory::hook(Range addr, std::function<void(uint8_t)> hook) {

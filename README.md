@@ -1,6 +1,7 @@
-# GB-Emu
+# Frame Boy
+> Simple C++ Game Boy Emulator for WebAssembly
 
-This project replicates the behavior of Game Boy (DMG) hardware in C++.
+This project replicates the behavior of early revision Game Boy (DMG) hardware in C++. It was intended as a learning experience, and does not intend to set a standard for accuracy, performance, or features. Nevertheless, it supports stereo sound, passes all of blargg's cpu instruction and instruction timing tests, and boots most MBC1 cartridges.
 
 ## Resources
 - [Gekkio's Docs](https://gekkio.fi/files/gb-docs/gbctr.pdf) & [notes](https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown) where possible
@@ -9,10 +10,4 @@ This project replicates the behavior of Game Boy (DMG) hardware in C++.
 - [Sameboy](https://github.com/LIJI32/SameBoy) for comparing memory and VRAM
 - [awesome-gbdev](https://github.com/gbdev/awesome-gbdev) includes many other resources
 
-## Debugging Notes
-- If cpu-instrs 2 fails, make sure tma is correct register
-- If dr-mario shows blank screen, make sure ly is being incremented during V-BLANK
-- If dr-mario demo sprites not shown, make sure DMA triggers twice when same value is written twice
-- If sprites render incorrectly, make sure tile-x increments correctly & skip condition is correct
-- If tetris not advancing to demo, make sure cpu is not clobbering STAT register
-- If dr-mario pill collision doesn't work, make sure cpu cannot write to OAM/VRAM in relevant PPU modes
+Also many thanks to *izik1*, *xiphias*, *Thief*, *Mask of Destiny* and others on the Emulation Development Discord for their help.

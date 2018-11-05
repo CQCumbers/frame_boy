@@ -8,6 +8,7 @@ dist/
 
 # macOS stuff
 .DS_Store
+frame_boy.xcodeproj/
 
 # test roms
 roms/
