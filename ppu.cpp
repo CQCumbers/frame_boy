@@ -26,11 +26,10 @@ void PPU::get_sprites() {
   unsigned height = 8 + (read1(lcdc, 2) << 3);
   // fetch sprites from OAM RAM
   for (uint16_t i = 0xfe00; i < 0xfe9f; i += 4) {
-    Sprite sprite(mem, i); // max 10 per line
-    if (ly + 16 >= sprite.y && ly + 16 < sprite.y + height) {
-      sprites.push_back(sprite);
-      if (sprites.size() == 10) break;
-    }
+    Sprite sprite(mem, i);
+    if (ly + 16 < sprite.y || ly + 16 >= sprite.y + height) continue;
+    sprites.push_back(sprite);
+    if (sprites.size() == 10) break;
   }
   // sort sprites by priority
   sort(sprites.begin(), sprites.end());
@@ -80,19 +79,15 @@ void PPU::draw() {
   pixels.fill(0), palettes.fill(bgp);
   if (read1(lcdc, 0)) {
     uint16_t bg_map = read1(lcdc, 3) ? 0x9c00 : 0x9800;
-    draw_tile(bg_map, scx + x, scy + ly, 0);
-    draw_tile(bg_map, scx + x + 1, scy + ly, 1);
-    draw_tile(bg_map, scx + x + 2, scy + ly, 2);
-    draw_tile(bg_map, scx + x + 3, scy + ly, 3);
+    for (uint8_t i = 0; i < 4; ++i)
+      draw_tile(bg_map, scx + x + i, scy + ly, i);
   }
   // draw window
   bool win = read1(lcdc, 5) && ly >= wy && x + 7 >= wx;
   if (win) {
     uint16_t win_map = read1(lcdc, 6) ? 0x9c00 : 0x9800;
-    draw_tile(win_map, x + 7 - wx, ly - wy, 0);
-    draw_tile(win_map, x + 8 - wx, ly - wy, 1);
-    draw_tile(win_map, x + 9 - wx, ly - wy, 2);
-    draw_tile(win_map, x + 10 - wx, ly- wy, 3);
+    for (uint8_t i = 0; i < 4; ++i)
+      draw_tile(win_map, x + 7 + i - wx, ly - wy, i);
   }
   // draw sprites
   for (const Sprite &sprite: sprites) {
