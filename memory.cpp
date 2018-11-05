@@ -93,8 +93,8 @@ void Memory::swap_rom(unsigned bank) {
 }
 
 void Memory::swap_ram(unsigned bank) {
-  if (bank == ram_bank || ram.size() <= 0x2000) return;
   bank &= (ram.size() >> 13) - 1;
+  if (bank == ram_bank || ram.size() <= 0x2000) return;
   copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
   copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);
   ram_bank = bank;

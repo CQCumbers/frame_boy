@@ -68,7 +68,7 @@ void Channel::update_cycle() {
       timer = (0x800 - freq) << 1;
       wave_pt = (wave_pt + 1) & 0x7;
       uint8_t duty = nr1 >> 6;
-      output = read1(duty_cycles[duty], wave_pt) * volume;
+      output = read1(duty_cycles[duty], wave_pt) * volume * on;
       break;
     } case CT::wave: {
       uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
@@ -76,7 +76,7 @@ void Channel::update_cycle() {
       wave_pt = (wave_pt + 1) & 0x1f;
       uint8_t sample = mem.refh(0x30 + (wave_pt >> 1));
       if (read1(wave_pt, 0)) sample >>= 4; else sample &= 0xf;
-      output = sample >> volume;
+      output = (sample >> volume) * on;
       break;
     } case CT::noise: {
       uint8_t div_code = nr3 & 0x7;
@@ -84,7 +84,7 @@ void Channel::update_cycle() {
       timer = noise_freqs[div_code] << (nr3 >> 4);
       lsfr = (bit << 14) | (lsfr >> 1);
       if (read1(nr3, 3)) lsfr = write1(lsfr, 6, bit);
-      output = !read1(lsfr, 0) * volume;
+      output = !read1(lsfr, 0) * volume * on;
       break;
     }
   }
