@@ -6,12 +6,13 @@
 class Timer {
   private:
     // Static Tables
-    static const std::array<uint8_t, 4> freq_to_bit;
+    static const std::array<uint8_t, 4> freq_bits;
 
     // Internal State
     Memory &mem;
     uint16_t clock = 0xabcc;
-    bool last_bit = false, tima_scheduled = false;
+    bool last_bit = false, tima_scheduled = false, on = false;
+    uint8_t freq_bit = 9;
 
     // Registers
     uint8_t &IF = mem.refh(0x0f);

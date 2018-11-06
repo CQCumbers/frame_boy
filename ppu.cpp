@@ -35,24 +35,20 @@ void PPU::get_sprites() {
   sort(sprites.begin(), sprites.end());
 }
 
-void PPU::draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset, unsigned start) {
+void PPU::draw_tile(uint16_t map, uint8_t x, uint8_t y, unsigned i) {
   // find correct tile in map
-  uint8_t map_x = (x_offset >> 3) & 0x1f, map_y = (y_offset >> 3) & 0x1f;
+  uint8_t map_x = (x >> 3) & 0x1f, map_y = (y >> 3) & 0x1f;
   uint8_t tile = mem.ref(map + (map_y << 5) + map_x);
   // find correct line in tile
-  uint16_t bg_tiles = read1(lcdc, 4) << 11 ? 0x8000 : 0x8800;
-  if (bg_tiles != 0x8000) tile ^= 0x80;
-  uint8_t tile_x = 7 - (x_offset & 0x7), tile_y = y_offset & 0x7;
-  uint8_t line = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1));
-  uint8_t lineh = mem.ref(bg_tiles + (tile << 4) + (tile_y << 1) + 1);
+  if (bg_tiles == 0x8800) tile ^= 0x80;
+  uint8_t tile_x = 7 - (x & 0x7), tile_y = y & 0x7;
+  uint16_t addr = bg_tiles + (tile << 4) + (tile_y << 1);
+  uint8_t &line = mem.ref(addr), &lineh = mem.ref(addr + 1);
   // find correct pixels in line
-  for (unsigned i = start; i < 4 && tile_x != 0xff; ++i, --tile_x) {
-    uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
-    pixels[i] = pixel; palettes[i] = bgp;
-  }
+  pixels[i] = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
 }
 
-void PPU::draw_sprite(Sprite sprite) {  
+void PPU::draw_sprite(Sprite &sprite) {
   // find correct line in sprite
   bool height16 = read1(lcdc, 2);
   unsigned tile_x = x + 8 - sprite.x, tile_y = ly + 16 - sprite.y;
@@ -61,8 +57,8 @@ void PPU::draw_sprite(Sprite sprite) {
   if (sprite.yf) tile_y = 7 + (height16 << 3) - tile_y;
   if (height16) sprite.tile = write1(sprite.tile, 0, tile_y >= 8), tile_y &= 0x7;
   // find correct line in tile
-  uint8_t line = mem.ref(0x8000 + (sprite.tile << 4) + (tile_y << 1));
-  uint8_t lineh = mem.ref(0x8001 + (sprite.tile << 4) + (tile_y << 1));
+  uint16_t addr = 0x8000 + (sprite.tile << 4) + (tile_y << 1);
+  uint8_t &line = mem.ref(addr), &lineh = mem.ref(addr + 1);
   // find correct pixels in line
   for (unsigned i = 0; i < 4; ++i, tile_x += (sprite.xf ? 1 : -1)) {
     if (x + i >= sprite.x || x + 8 + i < sprite.x) continue;
@@ -76,21 +72,19 @@ void PPU::draw_sprite(Sprite sprite) {
 
 void PPU::draw() {
   // draw background or blank
-  pixels.fill(0), palettes.fill(bgp);
+  pixels.fill(0); palettes.fill(bgp);
   if (read1(lcdc, 0)) {
-    uint16_t bg_map = read1(lcdc, 3) ? 0x9c00 : 0x9800;
     for (uint8_t i = 0; i < 4; ++i)
       draw_tile(bg_map, scx + x + i, scy + ly, i);
   }
   // draw window
   bool win = read1(lcdc, 5) && ly >= wy && x + 7 >= wx;
   if (win) {
-    uint16_t win_map = read1(lcdc, 6) ? 0x9c00 : 0x9800;
     for (uint8_t i = 0; i < 4; ++i)
       draw_tile(win_map, x + 7 + i - wx, ly - wy, i);
   }
   // draw sprites
-  for (const Sprite &sprite: sprites) {
+  for (Sprite &sprite: sprites) {
     if (!(x >= sprite.x || x + 11 < sprite.x)) draw_sprite(sprite);
   }
   // apply palette
@@ -123,6 +117,11 @@ PPU::PPU(Memory &mem_in): mem(mem_in) {
   mem.hook(0xff45, [&](uint8_t val) {
     stat = write1(stat, 2, ly == val);
     if (read1(stat, 6) && ly == val) IF = write1(IF, 1, true);
+  });
+  mem.hook(0xff40, [&](uint8_t val) {
+    bg_tiles = read1(val, 4) ? 0x8000 : 0x8800;
+    bg_map = read1(val, 3) ? 0x9c00 : 0x9800;
+    win_map = read1(val, 6) ? 0x9c00 : 0x9800;
   });
 }
 

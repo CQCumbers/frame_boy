@@ -22,7 +22,7 @@ class Channel {
 
     bool on = false, sweep_on = false;
     uint8_t wave_pt = 0, volume = 16, output = 0;
-    uint16_t timer = 0, len = 0, vol_len = 0;
+    uint16_t len = 0, vol_len = 0;
     uint16_t sweep_len = 0, sweep_freq = 0;
     uint16_t lsfr = 0;
     void enable();
@@ -36,10 +36,11 @@ class Channel {
 
   public:
     // Core Functions
+    uint16_t timer;
     Channel(CT type_in, Memory &mem);
     void update_frame(uint8_t frame_pt);
-    void update_cycle();
-    uint8_t get_output() const { return output; }
+    void update_wave();
+    const uint8_t &get_output() const { return output; }
     CT get_type() const { return type; }
 };
 

@@ -59,8 +59,7 @@ void Channel::update_frame(uint8_t frame_pt) {
   }
 }
 
-void Channel::update_cycle() {
-  if (timer-- != 0) return;
+void Channel::update_wave() {
   // advance 1 sample in waveform
   switch (type) {
     case CT::square1: case CT::square2: {
@@ -99,7 +98,7 @@ APU::APU(Memory &mem_in): mem(mem_in) {
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
   bool bit = read1(div, 5);
-  if (!bit && last_bit) {
+  if (last_bit && !bit) {
     frame_pt = (frame_pt + 1) & 0x7;
     for (Channel &channel : channels)
       channel.update_frame(frame_pt);
@@ -107,21 +106,21 @@ void APU::update(unsigned cpu_cycles) {
   last_bit = bit;
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
-    uint8_t left_out = 0, right_out = 0;
-    sample = (sample + 1) & 0x3f;
     for (Channel &channel : channels) {
-      channel.update_cycle();
-      if (sample == 0) {
-        uint16_t ch_out = channel.get_output();
-        if (read1(nr51, 4 + static_cast<uint8_t>(channel.get_type())))
-          left_out += ch_out - (ch_out * left_out) / 256;
-        if (read1(nr51, static_cast<uint8_t>(channel.get_type())))
-          right_out += ch_out - (ch_out * right_out) / 256;
-      }
+      if (channel.timer != 0) --channel.timer;
+      else channel.update_wave();
     }
-    if (sample == 0) {
-      audio.push_back(left_out * ((nr50 >> 4) & 0x7) / 8);
-      audio.push_back(right_out * (nr50 & 0x7) / 8);
+    ++sample &= 0x3f;
+    if (sample != 0) continue;
+    uint8_t left_out = 0, right_out = 0;
+    for (const Channel &channel : channels) {
+      const uint8_t &ch_out = channel.get_output();
+      if (read1(nr51, 4 + static_cast<uint8_t>(channel.get_type())))
+        left_out += ch_out - (ch_out * left_out) / 256;
+      if (read1(nr51, static_cast<uint8_t>(channel.get_type())))
+        right_out += ch_out - (ch_out * right_out) / 256;
     }
+    audio.push_back(left_out * ((nr50 >> 4) & 0x7) / 8);
+    audio.push_back(right_out * (nr50 & 0x7) / 8);
   }
 }

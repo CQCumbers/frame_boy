@@ -156,16 +156,15 @@ inline uint8_t CPU::set(uint8_t n, uint8_t a) {
 void CPU::check_interrupts() {
   // call appropriate interrupt, lower bit priority
   uint8_t interrupt = ffs(IF & IE & 0x1f);
-  if (interrupt != 0) {
-    if (ime) {
-      if (halt) ++cycles;
-      sp -= 2; mem.write16(sp, pc);
-      pc = 0x40 + 0x8 * (interrupt - 1);
-      IF = write1(IF, interrupt - 1, false);
-      ime = false; cycles += 5;
-    }
-    halt = false;
+  if (interrupt == 0) return;
+  if (ime) {
+    if (halt) ++cycles;
+    sp -= 2; mem.write16(sp, pc);
+    pc = 0x40 + 0x8 * (interrupt - 1);
+    IF = write1(IF, interrupt - 1, false);
+    ime = false; cycles += 5;
   }
+  halt = false;
 }
 
 unsigned CPU::execute() {

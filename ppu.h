@@ -24,6 +24,9 @@ class PPU {
     std::array<uint8_t, 160*144> lcd;
     unsigned cycles = 0, dma_i = 161;
     uint16_t x = 0, dma_src = 0;
+    uint16_t bg_tiles = 0x8800;
+    uint16_t bg_map = 0x9800;
+    uint16_t win_map = 0x9800;
     
     // Registers
     uint8_t &lcdc = mem.refh(0x40), &stat = mem.refh(0x41);
@@ -35,7 +38,7 @@ class PPU {
 
     // Drawing Functions
     void get_sprites();
-    void draw_sprite(Sprite s);
+    void draw_sprite(Sprite &sprite);
     void draw_tile(uint16_t map, uint8_t x_offset, uint8_t y_offset, unsigned start);
     void draw();
     void check_lyc();
