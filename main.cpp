@@ -2,19 +2,17 @@
 #include <emscripten.h>
 #endif
 
+#include "gameboy.h"
 #include <SDL2/SDL.h>
 #include <iostream>
-#include "gameboy.h"
 
 using namespace std;
 
-array<uint32_t, 4> colors = {
-  0xff9bbc0f, 0xff8bac0f, 0xff306230, 0xff0f380f
-};
+array<uint32_t, 4> colors = {0xff9bbc0f, 0xff8bac0f, 0xff306230, 0xff0f380f};
 
 struct Context {
   Gameboy gameboy;
-  array<uint32_t, 160*144> pixels;
+  array<uint32_t, 160 * 144> pixels;
   map<SDL_Keycode, Input> bindings;
   SDL_Renderer *renderer;
   SDL_Texture *texture;
@@ -23,9 +21,9 @@ struct Context {
 
 void loop(void *arg) {
   // read variables from context
-  Context *ctx = (Context*)arg;
+  Context *ctx = (Context *)arg;
   Gameboy &gb = ctx->gameboy;
-  array<uint32_t, 160*144> &pixels = ctx->pixels;
+  array<uint32_t, 160 * 144> &pixels = ctx->pixels;
   map<SDL_Keycode, Input> &bindings = ctx->bindings;
   SDL_Renderer *renderer = ctx->renderer;
   SDL_Texture *texture = ctx->texture;
@@ -35,30 +33,32 @@ void loop(void *arg) {
   SDL_Event event;
   while (SDL_PollEvent(&event) != 0) {
     if (event.type == SDL_KEYDOWN) {
-      if (!bindings.count(event.key.keysym.sym)) continue;
+      if (!bindings.count(event.key.keysym.sym))
+        continue;
       gb.input(bindings.at(event.key.keysym.sym), true);
     } else if (event.type == SDL_KEYUP) {
-      if (!bindings.count(event.key.keysym.sym)) continue;
+      if (!bindings.count(event.key.keysym.sym))
+        continue;
       gb.input(bindings.at(event.key.keysym.sym), false);
     }
   }
 
-  // generate screen texture
-  // generate audio
+  // generate screen texture & audio
   while (gb.ppu.get_mode() == 1) {
     gb.step();
     const vector<uint8_t> &audio = gb.get_audio();
-    SDL_QueueAudio(dev, audio.data(), audio.size());
+    SDL_QueueAudio(dev, audio.data(), static_cast<uint8_t>(audio.size()));
     gb.clear_audio();
   }
   while (gb.ppu.get_mode() != 1) {
     gb.step();
     const vector<uint8_t> &audio = gb.get_audio();
-    SDL_QueueAudio(dev, audio.data(), audio.size());
+    SDL_QueueAudio(dev, audio.data(), static_cast<uint8_t>(audio.size()));
     gb.clear_audio();
   }
-  const array<uint8_t, 160*144> &lcd = gb.get_lcd();
-  for (unsigned i = 0; i < 160*144; ++i) pixels[i] = colors[lcd[i]];
+  const array<uint8_t, 160 * 144> &lcd = gb.get_lcd();
+  for (unsigned i = 0; i < 160 * 144; ++i)
+    pixels[i] = colors[lcd[i]];
 
   // draw screen texture
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
@@ -81,7 +81,7 @@ int main() {
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 2097152 / 64;
+  spec.freq = 2097152 / 16;
   spec.format = AUDIO_U8;
   spec.channels = 2;
   spec.samples = 4096;
@@ -90,37 +90,35 @@ int main() {
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
   SDL_PauseAudioDevice(dev, 0);
 
-  SDL_Texture *texture = SDL_CreateTexture(
-    renderer, SDL_PIXELFORMAT_ARGB8888,
-    SDL_TEXTUREACCESS_STREAMING, 160, 144
-  );
+  SDL_Texture *texture =
+      SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+                        SDL_TEXTUREACCESS_STREAMING, 160, 144);
 
   // generate context object
-  Context ctx = {
-    Gameboy("roms/kirby.gb"),
-    array<uint32_t, 160*144>(),
-    map<SDL_Keycode, Input>(),
-    renderer, texture, dev
-  };
+  Context ctx = {Gameboy("roms/zelda.gb"),
+                 array<uint32_t, 160 * 144>(),
+                 map<SDL_Keycode, Input>(),
+                 renderer,
+                 texture,
+                 dev};
 
   // map SDL keys to joypad buttons
-  ctx.bindings = {
-    {SDLK_x, Input::a},
-    {SDLK_z, Input::b},
-    {SDLK_BACKSPACE, Input::select},
-    {SDLK_RETURN, Input::start},
-    {SDLK_RIGHT, Input::right},
-    {SDLK_LEFT, Input::left},
-    {SDLK_UP, Input::up},
-    {SDLK_DOWN, Input::down}
-  };
-  
-  // create main loop
-  #ifdef __EMSCRIPTEN__
+  ctx.bindings = {{SDLK_x, Input::a},
+                  {SDLK_z, Input::b},
+                  {SDLK_BACKSPACE, Input::select},
+                  {SDLK_RETURN, Input::start},
+                  {SDLK_RIGHT, Input::right},
+                  {SDLK_LEFT, Input::left},
+                  {SDLK_UP, Input::up},
+                  {SDLK_DOWN, Input::down}};
+
+// create main loop
+#ifdef __EMSCRIPTEN__
   emscripten_set_main_loop_arg(loop, &ctx, -1, 1);
-  #else
-  while (true) loop(&ctx);
-  #endif
+#else
+  while (true)
+    loop(&ctx);
+#endif
 
   // teardown SDL
   SDL_DestroyRenderer(renderer);
@@ -128,7 +126,7 @@ int main() {
   SDL_Quit();
 }
 
-void show(const array<uint8_t, 160*144> &lcd) {
+void show(const array<uint8_t, 160 * 144> &lcd) {
   array<string, 4> pixels = {" ", ".", "o", "M"};
   for (int j = 0; j < 160; ++j) {
     cout << "-";
@@ -151,7 +149,7 @@ int old_main() {
   uint8_t &sc = gb.mem.refh(0x02);
   while (true) {
     gb.step();
-    //show(gb.get_lcd());
+    // show(gb.get_lcd());
     if (read1(sc, 7)) {
       cout << (char)sb << flush;
       sc = write1(sc, 7, false);
@@ -165,8 +163,8 @@ int old_main() {
   uint8_t &ie = gb.mem.refh(0xff);
   while (cin.ignore()) {
     gb.print();
-    cout << hex << "FF40: " << (unsigned)lcdc << " "
-      << (unsigned)stat << " " << (unsigned)ly << endl;
+    cout << hex << "FF40: " << (unsigned)lcdc << " " << (unsigned)stat << " "
+         << (unsigned)ly << endl;
     cout << hex << "IE: " << (unsigned)ie << endl;
     gb.step();
   }
