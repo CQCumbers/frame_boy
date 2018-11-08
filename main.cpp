@@ -46,14 +46,14 @@ void loop(void *arg) {
   // generate screen texture & audio
   while (gb.ppu.get_mode() == 1) {
     gb.step();
-    const vector<uint8_t> &audio = gb.get_audio();
-    SDL_QueueAudio(dev, audio.data(), static_cast<uint8_t>(audio.size()));
+    const vector<float> &audio = gb.get_audio();
+    SDL_QueueAudio(dev, audio.data(), 4 * audio.size());
     gb.clear_audio();
   }
   while (gb.ppu.get_mode() != 1) {
     gb.step();
-    const vector<uint8_t> &audio = gb.get_audio();
-    SDL_QueueAudio(dev, audio.data(), static_cast<uint8_t>(audio.size()));
+    const vector<float> &audio = gb.get_audio();
+    SDL_QueueAudio(dev, audio.data(), 4 * audio.size());
     gb.clear_audio();
   }
   const array<uint8_t, 160 * 144> &lcd = gb.get_lcd();
@@ -81,8 +81,8 @@ int main() {
   SDL_AudioDeviceID dev;
 
   SDL_zero(spec);
-  spec.freq = 2097152 / 16;
-  spec.format = AUDIO_U8;
+  spec.freq = 44100;
+  spec.format = AUDIO_F32;
   spec.channels = 2;
   spec.samples = 4096;
   spec.callback = nullptr;

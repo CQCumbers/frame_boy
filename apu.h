@@ -55,7 +55,8 @@ private:
       Channel(CT::wave, mem),
       Channel(CT::noise, mem),
   }};
-  std::vector<uint8_t> audio;
+  std::vector<float> audio;
+  float left_out = 0, right_out = 0;
 
   // Registers
   uint8_t &div = mem.refh(0x04);
@@ -67,7 +68,7 @@ public:
   // Core Functions
   explicit APU(Memory &mem_in);
   void update(unsigned cpu_cycles);
-  const std::vector<uint8_t> &get_audio() const { return audio; }
+  const std::vector<float> &get_audio() const { return audio; }
   void clear_audio() { audio.clear(); }
 };
 

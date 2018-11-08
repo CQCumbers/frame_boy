@@ -7,6 +7,23 @@ using namespace std;
 const array<uint8_t, 4> Channel::vol_codes = {4, 0, 1, 2};
 const array<uint8_t, 8> Channel::noise_freqs = {4, 8, 16, 24, 32, 40, 48, 56};
 const array<uint8_t, 4> Channel::duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
+const array<float, 48> filter = {
+    0.0007513134235962548, 0.002340688871576822, 0.004036000579836036,
+    0.005824282824920402,  0.007691213022035032, 0.00962126127555797,
+    0.011597857027373022,  0.013603570772604646, 0.01562030859370895,
+    0.017629517075138372,  0.019612396004762753, 0.02155011614724409,
+    0.02342403929048271,   0.02521593772040925,  0.02690821027257962,
+    0.028484092141469255,  0.029927855699730225, 0.03122499968908121,
+    0.03236242429051317,   0.033328589762151785, 0.034113656545962316,
+    0.034709604986589884,  0.03511033307365235,  0.03531173090902395,
+    0.03531173090902395,   0.03511033307365235,  0.034709604986589884,
+    0.034113656545962316,  0.033328589762151785, 0.03236242429051317,
+    0.03122499968908121,   0.029927855699730225, 0.028484092141469255,
+    0.02690821027257962,   0.02521593772040925,  0.02342403929048271,
+    0.02155011614724409,   0.019612396004762753, 0.017629517075138372,
+    0.01562030859370895,   0.013603570772604646, 0.011597857027373022,
+    0.00962126127555797,   0.007691213022035032, 0.005824282824920402,
+    0.004036000579836036,  0.002340688871576822, 0.0007513134235962548};
 
 // Channel Functions
 
@@ -42,7 +59,7 @@ void Channel::enable() {
 
 void Channel::update_frame(uint8_t frame_pt) {
   // update length counter
-  if (!read1(frame_pt, 0) && read1(nr4, 6) && len > 0 && --len == 0)
+  if (read1(frame_pt, 0) && read1(nr4, 6) && len > 0 && --len == 0)
     on = false;
   // update volume envelope
   if (frame_pt == 7 && type != CT::wave && vol_len > 0 && --vol_len == 0) {
@@ -97,7 +114,7 @@ void Channel::update_wave() {
     uint8_t div_code = nr3 & 0x7;
     bool bit = read1(lsfr, 0) ^ read1(lsfr, 1);
     timer = noise_freqs[div_code] << (nr3 >> 4);
-    lsfr = (bit << 14) | (lsfr >> 1);
+    lsfr = write1(lsfr >> 1, 14, bit);
     if (read1(nr3, 3))
       lsfr = write1(lsfr, 6, bit);
     output = !read1(lsfr, 0) * volume * on;
@@ -114,7 +131,7 @@ APU::APU(Memory &mem_in) : mem(mem_in) {
 
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
-  bool bit = read1(div, 5);
+  bool bit = read1(div, 4);
   if (last_bit && !bit) {
     frame_pt = (frame_pt + 1) & 0x7;
     for (Channel &channel : channels)
@@ -123,24 +140,26 @@ void APU::update(unsigned cpu_cycles) {
   last_bit = bit;
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
+    uint8_t left_now = 0, right_now = 0;
     for (Channel &channel : channels) {
       if (channel.timer != 0)
         --channel.timer;
       else
         channel.update_wave();
+      const unsigned &ch_out = channel.get_output();
+      const unsigned &type = static_cast<uint8_t>(channel.get_type());
+      if (read1(nr51, 4 + type))
+        left_now += ch_out - (ch_out * left_now) / 256;
+      if (read1(nr51, type))
+        right_now += ch_out - (ch_out * right_now) / 256;
     }
-    ++sample &= 0xf;
+    ++sample %= 48;
+    left_out += left_now * filter[sample] / 16;
+    right_out += right_now * filter[sample] / 16;
     if (sample != 0)
       continue;
-    uint8_t left_out = 0, right_out = 0;
-    for (const Channel &channel : channels) {
-      const uint8_t &ch_out = channel.get_output();
-      if (read1(nr51, 4 + static_cast<uint8_t>(channel.get_type())))
-        left_out += ch_out - (ch_out * left_out) / 256;
-      if (read1(nr51, static_cast<uint8_t>(channel.get_type())))
-        right_out += ch_out - (ch_out * right_out) / 256;
-    }
     audio.push_back(left_out * ((nr50 >> 4) & 0x7) / 8);
-    audio.push_back(right_out * (nr50 & 0x7) / 8);
+    audio.push_back(left_out * (nr50 & 0x7) / 8);
+    left_out = right_out = 0;
   }
 }
