@@ -102,7 +102,7 @@ void PPU::draw() {
   x += 4;
 }
 
-void PPU::check_lyc() {
+void PPU::check_lyc() const {
   bool lyc_equal = lyc == ly;
   stat = write1(stat, 2, lyc_equal);
   if (read1(stat, 6) && lyc_equal)

@@ -158,10 +158,6 @@ inline void CPU::bit(uint8_t n, uint8_t a) {
   f.z = !(a >> n & 0x1);
 }
 
-inline uint8_t CPU::reset(uint8_t n, uint8_t a) { return a & ~(0x1 << n); }
-
-inline uint8_t CPU::set(uint8_t n, uint8_t a) { return a | (0x1 << n); }
-
 // Core Functions
 
 void CPU::check_interrupts() {

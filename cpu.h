@@ -70,8 +70,6 @@ private:
   uint8_t shift_right_logic(uint8_t a);
   uint8_t swap(uint8_t a);
   void bit(uint8_t n, uint8_t a);
-  uint8_t reset(uint8_t n, uint8_t a);
-  uint8_t set(uint8_t n, uint8_t a);
   void check_interrupts();
   void execute_cb();
 

@@ -35,7 +35,7 @@ private:
 public:
   // Core Functions
   uint16_t timer;
-  Channel(CT type_in, Memory &mem);
+  Channel(CT type_in, Memory &mem_in);
   void update_frame(uint8_t frame_pt);
   void update_wave();
   const uint8_t &get_output() const { return output; }

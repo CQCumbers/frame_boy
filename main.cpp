@@ -21,7 +21,7 @@ struct Context {
 
 void loop(void *arg) {
   // read variables from context
-  Context *ctx = (Context *)arg;
+  Context *ctx = static_cast<Context *>(arg);
   Gameboy &gb = ctx->gameboy;
   array<uint32_t, 160 * 144> &pixels = ctx->pixels;
   map<SDL_Keycode, Input> &bindings = ctx->bindings;
@@ -43,19 +43,13 @@ void loop(void *arg) {
     }
   }
 
-  // generate screen texture & audio
-  while (gb.ppu.get_mode() == 1) {
-    gb.step();
-    const vector<float> &audio = gb.get_audio();
-    SDL_QueueAudio(dev, audio.data(), 4 * audio.size());
-    gb.clear_audio();
-  }
-  while (gb.ppu.get_mode() != 1) {
-    gb.step();
-    const vector<float> &audio = gb.get_audio();
-    SDL_QueueAudio(dev, audio.data(), 4 * audio.size());
-    gb.clear_audio();
-  }
+  // generate audio buffer
+  gb.update();
+  const vector<float> &audio = gb.get_audio();
+  SDL_QueueAudio(dev, audio.data(), 4 * static_cast<unsigned>(audio.size()));
+  gb.clear_audio();
+
+  // generate screen texture
   const array<uint8_t, 160 * 144> &lcd = gb.get_lcd();
   for (unsigned i = 0; i < 160 * 144; ++i)
     pixels[i] = colors[lcd[i]];

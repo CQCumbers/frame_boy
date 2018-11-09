@@ -70,4 +70,8 @@ inline unsigned write1(unsigned num, unsigned index, bool val) {
     return num & ~(0x1 << index);
 }
 
+inline uint8_t reset(uint8_t n, uint8_t a) { return a & ~(0x1 << n); }
+
+inline uint8_t set(uint8_t n, uint8_t a) { return a | (0x1 << n); }
+
 #endif

@@ -40,6 +40,7 @@ Memory::Memory(const string &filename) {
   wmask(Range(0x0, 0x7fff), 0x0);
   mask(Range(0xa000, 0xbfff), 0x0);
 
+  assert(cart_type < 4);
   // setup memory bank controller (MBC1)
   if (cart_type >= 1 && cart_type <= 3) {
     hook(Range(0x0, 0x1fff), [&](uint8_t val) {
