@@ -29,6 +29,7 @@ private:
   uint16_t bg_tiles = 0x8800;
   uint16_t bg_map = 0x9800;
   uint16_t win_map = 0x9800;
+  bool height16 = false;
 
   // Registers
   uint8_t &lcdc = mem.refh(0x40), &stat = mem.refh(0x41);

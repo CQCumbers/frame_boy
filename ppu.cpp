@@ -42,29 +42,27 @@ void PPU::draw_tile(uint16_t map, uint8_t x, uint8_t y, unsigned i) {
   // find correct tile in map
   uint8_t map_x = (x >> 3) & 0x1f, map_y = (y >> 3) & 0x1f;
   uint8_t tile = mem.ref(map + (map_y << 5) + map_x);
+  tile ^= (bg_tiles >> 4) & 0x80;
   // find correct line in tile
-  if (bg_tiles == 0x8800)
-    tile ^= 0x80;
   uint8_t tile_x = 7 - (x & 0x7), tile_y = y & 0x7;
   uint16_t addr = bg_tiles + (tile << 4) + (tile_y << 1);
-  uint8_t &line = mem.ref(addr), &lineh = mem.ref(addr + 1);
-  // find correct pixels in line
+  uint8_t &line = mem.ref(addr), &lineh = mem.ref(++addr);
   pixels[i] = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
 }
 
 void PPU::draw_sprite(Sprite &sprite) {
   // find correct line in sprite
-  bool height16 = read1(lcdc, 2);
   unsigned tile_x = x + 8 - sprite.x, tile_y = ly + 16 - sprite.y;
+  uint8_t tile = sprite.tile;
   // check mirroring and height
   if (!sprite.xf)
     tile_x = 7 - tile_x;
   if (sprite.yf)
     tile_y = 7 + (height16 << 3) - tile_y;
-  if (height16)
-    sprite.tile = write1(sprite.tile, 0, tile_y >= 8), tile_y &= 0x7;
+  /*if (height16 && tile_y > 7)
+    tile |= 0x1, tile_y &= 0x7;*/
   // find correct line in tile
-  uint16_t addr = 0x8000 + (sprite.tile << 4) + (tile_y << 1);
+  uint16_t addr = 0x8000 + (tile << 4) + (tile_y << 1);
   uint8_t &line = mem.ref(addr), &lineh = mem.ref(addr + 1);
   // find correct pixels in line
   for (unsigned i = 0; i < 4; ++i, tile_x += (sprite.xf ? 1 : -1)) {
@@ -84,14 +82,13 @@ void PPU::draw() {
   pixels.fill(0);
   palettes.fill(bgp);
   if (read1(lcdc, 0)) {
-    for (uint8_t i = 0; i < 4; ++i)
-      draw_tile(bg_map, scx + x + i, scy + ly, i);
+    for (uint8_t i = 0, j = scx + x; i < 4; ++i, ++j)
+      draw_tile(bg_map, j, scy + ly, i);
   }
   // draw window
-  bool win = read1(lcdc, 5) && ly >= wy && x + 7 >= wx;
-  if (win) {
-    for (uint8_t i = 0; i < 4; ++i)
-      draw_tile(win_map, x + 7 + i - wx, ly - wy, i);
+  if (read1(lcdc, 5) && ly >= wy && x + 7 >= wx) {
+    for (uint8_t i = 0, j = x + 7 - wx; i < 4; ++i, ++j)
+      draw_tile(win_map, j, ly - wy, i);
   }
   // draw sprites
   for (Sprite &sprite : sprites) {
@@ -99,9 +96,10 @@ void PPU::draw() {
       draw_sprite(sprite);
   }
   // apply palette
-  for (unsigned i = 0; i < 4; ++i, ++x) {
-    lcd[ly * 160 + x] = (palettes[i] >> (pixels[i] << 1)) & 0x3;
+  for (uint16_t i = 0, j = ly * 160 + x; i < 4; ++i, ++j) {
+    lcd[j] = (palettes[i] >> (pixels[i] << 1)) & 0x3;
   }
+  x += 4;
 }
 
 void PPU::check_lyc() {
@@ -137,6 +135,7 @@ PPU::PPU(Memory &mem_in) : mem(mem_in) {
     bg_tiles = read1(val, 4) ? 0x8000 : 0x8800;
     bg_map = read1(val, 3) ? 0x9c00 : 0x9800;
     win_map = read1(val, 6) ? 0x9c00 : 0x9800;
+    height16 = read1(val, 2);
   });
 }
 
