@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <cassert>
 #include <iostream>
 
 using namespace std;
@@ -1151,6 +1152,7 @@ unsigned CPU::execute() {
     --pc;
     cout << "Unimplemented opcode " << hex << (unsigned)mem.read(pc) << " at "
          << (unsigned)pc << endl;
+    assert(false);
   }
 
   return cycles;

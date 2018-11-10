@@ -15,9 +15,12 @@ struct Context {
   array<uint32_t, 160 * 144> pixels;
   map<SDL_Keycode, Input> bindings;
   SDL_Renderer *renderer;
+  SDL_Window *window;
   SDL_Texture *texture;
   SDL_AudioDeviceID dev;
 };
+
+Context *gctx = nullptr;
 
 void loop(void *arg) {
   // read variables from context
@@ -62,12 +65,22 @@ void loop(void *arg) {
   SDL_RenderPresent(renderer);
 }
 
-int main() {
+extern "C" {
+void play() {
+  if (gctx) {
+    // teardown SDL
+    SDL_DestroyRenderer(gctx->renderer);
+    SDL_DestroyWindow(gctx->window);
+    SDL_CloseAudioDevice(gctx->dev);
+    SDL_Quit();
+    gctx = nullptr;
+  }
+
   // setup SDL
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
   SDL_Window *window;
   SDL_Renderer *renderer;
-  SDL_CreateWindowAndRenderer(160 * 3, 144 * 3, 0, &window, &renderer);
+  SDL_CreateWindowAndRenderer(160 * 4, 144 * 4, 0, &window, &renderer);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
   SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "best");
 
@@ -89,12 +102,14 @@ int main() {
                         SDL_TEXTUREACCESS_STREAMING, 160, 144);
 
   // generate context object
-  Context ctx = {Gameboy("roms/zelda.gb"),
+  Context ctx = {Gameboy("rom.gb"),
                  array<uint32_t, 160 * 144>(),
                  map<SDL_Keycode, Input>(),
                  renderer,
+                 window,
                  texture,
                  dev};
+  gctx = &ctx;
 
   // map SDL keys to joypad buttons
   ctx.bindings = {{SDLK_x, Input::a},
@@ -106,60 +121,15 @@ int main() {
                   {SDLK_UP, Input::up},
                   {SDLK_DOWN, Input::down}};
 
-// create main loop
+  // create main loop
 #ifdef __EMSCRIPTEN__
+  emscripten_cancel_main_loop();
   emscripten_set_main_loop_arg(loop, &ctx, -1, 1);
 #else
   while (true)
     loop(&ctx);
 #endif
-
-  // teardown SDL
-  SDL_DestroyRenderer(renderer);
-  SDL_DestroyWindow(window);
-  SDL_Quit();
+}
 }
 
-void show(const array<uint8_t, 160 * 144> &lcd) {
-  array<string, 4> pixels = {" ", ".", "o", "M"};
-  for (int j = 0; j < 160; ++j) {
-    cout << "-";
-  }
-  cout << endl;
-  for (int i = 0; i < 144; ++i) {
-    for (int j = 0; j < 160; ++j) {
-      cout << pixels[lcd[160 * i + j]] << flush;
-    }
-    cout << endl;
-  }
-}
-
-int old_main() {
-  // initialize hardware
-  Gameboy gb("roms/zelda.gb");
-
-  // run to breakpoint
-  uint8_t &sb = gb.mem.refh(0x01);
-  uint8_t &sc = gb.mem.refh(0x02);
-  while (true) {
-    gb.step();
-    // show(gb.get_lcd());
-    if (read1(sc, 7)) {
-      cout << (char)sb << flush;
-      sc = write1(sc, 7, false);
-    }
-  }
-
-  // step one instruction
-  uint8_t &lcdc = gb.mem.refh(0x40);
-  uint8_t &stat = gb.mem.refh(0x41);
-  uint8_t &ly = gb.mem.refh(0x44);
-  uint8_t &ie = gb.mem.refh(0xff);
-  while (cin.ignore()) {
-    gb.print();
-    cout << hex << "FF40: " << (unsigned)lcdc << " " << (unsigned)stat << " "
-         << (unsigned)ly << endl;
-    cout << hex << "IE: " << (unsigned)ie << endl;
-    gb.step();
-  }
-}
+int main() { play(); }

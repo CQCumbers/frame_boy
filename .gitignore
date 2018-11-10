@@ -4,7 +4,6 @@
 *.out
 *.dSYM
 *.stackdump
-dist/
 
 # macOS stuff
 .DS_Store

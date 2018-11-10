@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <title>Frame Boy</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Work+Sans" rel="stylesheet">
+    <style>
+      body {
+        background-color: #f6f3f1;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        color: #121e72;
+        font-family: "Work Sans", sans-serif;
+      }
+
+      h1 {
+        font-style: italic;
+        text-transform: uppercase;
+        margin: 15px 20px;
+      }
+
+      .content {
+        margin: 0 auto;
+        padding: 0 2em;
+        max-width: 600px;
+      }
+
+      #lcd {
+        width: 100%;
+        background-color: #9bbc0f;
+        border: 5px solid #d8d8d8;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="content">
+      <canvas id="lcd" width=640 height=576></canvas>
+      <div id="menu-buttons">
+        <input type="file" onchange="useFileInput(this);">
+      </div>
+      <h1>Frame Boy</h1>
+      <p>Arrow keys for direction, X/Z for A/B, Backspace for Select, Enter for Start</p>
+    </main>
+
+    <script type="text/javascript">
+      var Module = {
+        preRun: [],
+        postRun: [],
+        canvas: document.getElementById('lcd'),
+      };
+
+      function useFileInput(fileInput) {
+        if (fileInput.files.length == 0)
+          return;
+        var file = fileInput.files[0];
+        var fr = new FileReader();
+        fr.onload = function () {
+          var data = new Uint8Array(fr.result);
+          FS.writeFile('rom.gb', data);
+          Module._play();
+          fileInput.value = '';
+        };
+        fr.readAsArrayBuffer(file);
+      }
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

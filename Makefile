@@ -3,12 +3,12 @@ main.exe: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp ma
 	g++ -Wall -Werror -Wextra -flto -g --std=c++11 memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp -o main.exe -O3
 
 # Compile main executable to wasm
-main.html: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp
-	emcc -Wall -Werror -Wextra -flto -g --std=c++11 memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp -o dist/main.html -O3 --preload-file roms -s WASM=1 -s USE_SDL=2 --llvm-lto 3 --emrun
+index.html: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp
+	emcc -Wall -Werror -Wextra -flto --std=c++11 memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp -o docs/index.html -O3 -s USE_SDL=2 --llvm-lto 3 --emrun --shell-file base.html -s EXPORTED_FUNCTIONS='["_play"]' -s FORCE_FILESYSTEM=1 -fno-rtti -fno-exceptions
 
 # serve wasm executable
-serve: main.html
-	emrun --no_browser --port 8080 dist/main.html
+serve: index.html
+	emrun --no_browser --port 8080 docs/index.html
 
 # Remove automatically generated files
 clean:
@@ -17,3 +17,7 @@ clean:
 # Run cppcheck static analyzer
 check:
 	cppcheck --enable=all --inconclusive --std=c++11 .
+
+# Run clang-format
+format:
+	clang-format -i *.cpp *.h
