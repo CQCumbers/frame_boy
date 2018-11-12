@@ -1,7 +1,10 @@
 # Frame Boy
 > Simple C++ Game Boy Emulator for WebAssembly
 
-This project replicates the behavior of early revision Game Boy (DMG) hardware in C++. It was intended as a learning experience, and does not intend to set a standard for accuracy, performance, or features. Nevertheless, it supports stereo sound, passes all of blargg's cpu instruction and instruction timing tests, and boots most MBC1 cartridges.
+This project replicates the behavior of early revision Game Boy (DMG) hardware in C++. It was intended as a learning experience, and does not intend to set a standard for accuracy, performance, or features. Nevertheless, it supports stereo sound, passes all of blargg's cpu instruction and instruction timing tests, and boots most MBC1 cartridges. Check it out at [cqcumbers.com/frame\_boy](https://cqcumbers.com/frame_boy).
+
+## Screenshots
+![screenshots](screenshots.png)
 
 ## Resources
 - [Gekkio's Docs](https://gekkio.fi/files/gb-docs/gbctr.pdf) & [notes](https://github.com/Gekkio/mooneye-gb/blob/master/docs/accuracy.markdown) where possible
