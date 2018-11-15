@@ -32,9 +32,14 @@ private:
   uint8_t &ram_size = ref(0x149);
   unsigned ram_bank = 0;
 
-  // MBC1 State
+  // MBC State
+  uint8_t mbc = 0;
+  bool clock = false;
+  bool rumble = false;
   bool ram_mode = false;
   unsigned bank = 0;
+  void swap_rom(unsigned bank);
+  void swap_ram(unsigned bank);
 
 public:
   // Core Functions
@@ -43,8 +48,7 @@ public:
   void wmask(Range addr, uint8_t mask);
   void mask(Range addr, uint8_t mask);
   void hook(Range addr, std::function<void(uint8_t)> hook);
-  void swap_rom(unsigned bank);
-  void swap_ram(unsigned bank);
+  const std::vector<uint8_t> &save();
 
   // Memory Access Functions
   uint8_t &ref(uint16_t addr);

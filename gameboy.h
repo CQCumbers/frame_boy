@@ -25,6 +25,7 @@ struct Gameboy {
     return ppu.get_lcd();
   }
   const std::vector<float> &get_audio() const { return apu.get_audio(); }
+  const std::vector<uint8_t> &save() { return mem.save(); }
   void clear_audio() { apu.clear_audio(); }
 
   // Debug Functions

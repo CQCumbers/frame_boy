@@ -36,48 +36,76 @@ Memory::Memory(const string &filename) {
   array<unsigned, 6> ram_sizes = {0, 2, 8, 32, 128, 64};
   ram.resize(ram_sizes[ram_size] << 10);
 
+  /*ifstream save_file(save, ios::binary);
+  assert(save_file.good());
+  save_file.read(reinterpret_vast<char *>(&ram[0]), ram.size());
+  copy_n(&ram[0], 0x2000, &mem[0xa000]);*/
+
   // set r/w permission bitmasks
   wmask(Range(0x0, 0x7fff), 0x0);
   mask(Range(0xa000, 0xbfff), 0x0);
 
-  assert(cart_type < 4);
-  // setup memory bank controller (MBC1)
-  if (cart_type >= 1 && cart_type <= 3) {
-    hook(Range(0x0, 0x1fff), [&](uint8_t val) {
-      if ((val & 0xf) == 0xa) {
-        if (ram.size() >= 0x2000)
-          mask(Range(0xa000, 0xbfff), 0xff);
-        else
-          mask(Range(0xa000, 0xa000 + ram.size() - 1), 0xff);
-      } else
-        mask(Range(0xa000, 0xbfff), 0x0);
-    });
-    hook(Range(0x2000, 0x3fff), [&](uint8_t val) {
+  // setup memory bank controller
+  Range type(cart_type);
+  if (type == Range(0x1, 0x3))
+    mbc = 1;
+  else if (type == Range(0xf, 0x13))
+    mbc = 3;
+  else if (type == Range(0x19, 0x1e))
+    mbc = 5;
+  clock = (type == Range(0xf, 0x10));
+  rumble = (type == Range(0x1c, 0x1e));
+  if (mbc == 0)
+    return;
+
+  hook(Range(0x0, 0x1fff), [&](uint8_t val) {
+    if ((val & 0xf) == 0xa) {
+      if (ram.size() >= 0x2000)
+        mask(Range(0xa000, 0xbfff), 0xff);
+      else
+        mask(Range(0xa000, 0xa000 + ram.size() - 1), 0xff);
+    } else
+      mask(Range(0xa000, 0xbfff), 0x0);
+  });
+  hook(Range(0x2000, 0x3fff), [&](uint8_t val) {
+    if (mbc == 1)
       val &= 0x1f;
-      if (val == 0)
-        val = 1;
+    else if (mbc == 3)
+      val &= 0x7f;
+    if (val == 0)
+      val = 1;
+    if (mbc == 1) {
       bank = (bank & 0x60) | val;
       if (ram_mode)
         swap_rom(bank & 0x1f), swap_ram(bank >> 5);
       else
         swap_rom(bank), swap_ram(0);
-    });
-    hook(Range(0x4000, 0x5fff), [&](uint8_t val) {
+    } else
+      swap_rom(val);
+  });
+  hook(Range(0x4000, 0x5fff), [&](uint8_t val) {
+    if (mbc == 1) {
       val &= 0x3;
       bank = (val << 5) | (bank & 0x1f);
       if (ram_mode)
         swap_rom(bank & 0x1f), swap_ram(bank >> 5);
       else
         swap_rom(bank), swap_ram(0);
-    });
-    hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
+    } else {
+      if (rumble)
+        val &= 0x7;
+      swap_ram(val);
+    }
+  });
+  hook(Range(0x6000, 0x7fff), [&](uint8_t val) {
+    if (mbc == 1) {
       ram_mode = read1(val, 0);
       if (ram_mode)
         swap_rom(bank & 0x1f), swap_ram(bank >> 5);
       else
         swap_rom(bank), swap_ram(0);
-    });
-  }
+    }
+  });
 }
 
 void Memory::rmask(Range addr, uint8_t mask) { rmasks[addr] = mask; }
@@ -105,6 +133,11 @@ void Memory::swap_ram(unsigned bank) {
   copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
   copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);
   ram_bank = bank;
+}
+
+const vector<uint8_t> &Memory::save() {
+  copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
+  return ram;
 }
 
 // Memory Access Functions
