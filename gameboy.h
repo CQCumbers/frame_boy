@@ -17,7 +17,7 @@ struct Gameboy {
   Joypad joypad;
 
   // Core Functions
-  explicit Gameboy(const std::string &filename);
+  explicit Gameboy(const std::string &filename, const std::string &save);
   void step();
   void update();
   void input(Input input_enum, bool val);
@@ -25,7 +25,7 @@ struct Gameboy {
     return ppu.get_lcd();
   }
   const std::vector<float> &get_audio() const { return apu.get_audio(); }
-  const std::vector<uint8_t> &save() { return mem.save(); }
+  void save(const std::string &save) { mem.save(save); }
   void clear_audio() { apu.clear_audio(); }
 
   // Debug Functions

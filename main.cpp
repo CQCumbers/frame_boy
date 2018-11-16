@@ -66,6 +66,13 @@ void loop(void *arg) {
 }
 
 extern "C" {
+void save() {
+  Gameboy &gb = gctx->gameboy;
+  gb.save("ram.sav");
+}
+}
+
+extern "C" {
 void play() {
   if (gctx) {
     // teardown SDL
@@ -82,7 +89,6 @@ void play() {
   SDL_Renderer *renderer;
   SDL_CreateWindowAndRenderer(160 * 4, 144 * 4, 0, &window, &renderer);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-  SDL_SetHint(SDL_HINT_AUDIO_RESAMPLING_MODE, "best");
 
   SDL_AudioSpec spec;
   SDL_AudioDeviceID dev;
@@ -102,7 +108,7 @@ void play() {
                         SDL_TEXTUREACCESS_STREAMING, 160, 144);
 
   // generate context object
-  Context ctx = {Gameboy("rom.gb"),
+  Context ctx = {Gameboy("rom.gb", "ram.sav"),
                  array<uint32_t, 160 * 144>(),
                  map<SDL_Keycode, Input>(),
                  renderer,

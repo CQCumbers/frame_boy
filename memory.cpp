@@ -19,27 +19,28 @@ bool Range::operator==(const Range &r) const {
 
 // Core Functions
 
-Memory::Memory(const string &filename) {
+Memory::Memory(const string &filename, const string &save) {
   // read rom into vector
   ifstream file(filename, ios::binary);
   assert(file.good());
 
+  // resize & read rom
   file.seekg(0, ios::end);
   streampos size = file.tellg();
   file.seekg(0, ios::beg);
   rom.resize(size);
   file.read(reinterpret_cast<char *>(&rom[0]), size);
   copy_n(&rom[0], 0x8000, &mem[0]);
-
-  // size rom & ram appropriately
   rom.resize(0x8000 << rom_size);
+
+  // resize & read ram
   array<unsigned, 6> ram_sizes = {0, 2, 8, 32, 128, 64};
   ram.resize(ram_sizes[ram_size] << 10);
-
-  /*ifstream save_file(save, ios::binary);
-  assert(save_file.good());
-  save_file.read(reinterpret_vast<char *>(&ram[0]), ram.size());
-  copy_n(&ram[0], 0x2000, &mem[0xa000]);*/
+  ifstream save_file(save, ios::binary);
+  if (save_file.good()) {
+    save_file.read(reinterpret_cast<char *>(&ram[0]), ram.size());
+    copy_n(&ram[0], 0x2000, &mem[0xa000]);
+  }
 
   // set r/w permission bitmasks
   wmask(Range(0x0, 0x7fff), 0x0);
@@ -135,9 +136,12 @@ void Memory::swap_ram(unsigned bank) {
   ram_bank = bank;
 }
 
-const vector<uint8_t> &Memory::save() {
+void Memory::save(const string &save) {
+  if (mbc == 0)
+    return;
   copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
-  return ram;
+  ofstream save_file(save, ios::binary);
+  save_file.write(reinterpret_cast<char *>(&ram[0]), ram.size());
 }
 
 // Memory Access Functions

@@ -41,12 +41,16 @@
     <main class="content">
       <canvas id="lcd" width=640 height=576></canvas>
       <div id="menu-buttons">
-        <input type="file" onchange="useFileInput(this);">
+        <input type="file" onchange="loadFile(this, 'rom.gb')">
+        <input type="file" onchange="loadFile(this, 'ram.sav')">
+        <button onclick="play()">Load</button>
+        <button onclick="save('ram.sav')">Save</button>
       </div>
       <h1>Frame Boy</h1>
       <p>Arrow keys for direction, X/Z for A/B, Backspace for Select, Enter for Start</p>
     </main>
 
+    <script src="FileSaver.min.js"></script>
     <script type="text/javascript">
       var Module = {
         preRun: [],
@@ -54,19 +58,28 @@
         canvas: document.getElementById('lcd'),
       };
 
-      function useFileInput(fileInput) {
-        if (fileInput.files.length == 0)
-          return;
-        var file = fileInput.files[0];
+      var loadFile = (input, filename) => {
+        if (input.files.length == 0) return;
+        var file = input.files[0];
         var fr = new FileReader();
-        fr.onload = function () {
-          var data = new Uint8Array(fr.result);
-          FS.writeFile('rom.gb', data);
-          Module._play();
-          fileInput.value = '';
-        };
         fr.readAsArrayBuffer(file);
-      }
+        fr.onload = () => {
+          var data = new Uint8Array(fr.result);
+          FS.writeFile(filename, data);
+        };
+      };
+
+      var play = () => {
+        Module._play();
+      };
+
+      var save = (localFSname) => {
+        Module._save();
+        if (!FS.analyzePath('ram.sav').exists) return;
+        var data = FS.readFile('ram.sav');
+        var blob = new Blob([data.buffer], {type: "application/octet-binary"});
+        saveAs(blob, localFSname);
+      };
     </script>
     {{{ SCRIPT }}}
   </body>

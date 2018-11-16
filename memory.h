@@ -43,12 +43,12 @@ private:
 
 public:
   // Core Functions
-  explicit Memory(const std::string &filename);
+  explicit Memory(const std::string &filename, const std::string &save);
   void rmask(Range addr, uint8_t mask);
   void wmask(Range addr, uint8_t mask);
   void mask(Range addr, uint8_t mask);
   void hook(Range addr, std::function<void(uint8_t)> hook);
-  const std::vector<uint8_t> &save();
+  void save(const std::string &save);
 
   // Memory Access Functions
   uint8_t &ref(uint16_t addr);

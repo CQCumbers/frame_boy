@@ -4,8 +4,9 @@ using namespace std;
 
 // Core Functions
 
-Gameboy::Gameboy(const string &filename)
-    : mem(filename), cpu(mem), ppu(mem), apu(mem), timer(mem), joypad(mem) {}
+Gameboy::Gameboy(const string &filename, const string &save)
+    : mem(filename, save), cpu(mem), ppu(mem), apu(mem), timer(mem),
+      joypad(mem) {}
 
 void Gameboy::step() {
   joypad.update();

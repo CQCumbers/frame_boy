@@ -4,7 +4,7 @@ main.exe: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp ma
 
 # Compile main executable to wasm
 index.html: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp
-	emcc -Wall -Werror -Wextra -flto --std=c++11 memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp -o docs/index.html -O3 -s USE_SDL=2 --llvm-lto 3 --emrun --shell-file base.html -s EXPORTED_FUNCTIONS='["_play"]' -s FORCE_FILESYSTEM=1 -fno-rtti -fno-exceptions
+	emcc -Wall -Werror -Wextra -flto --std=c++11 memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp -o docs/index.html -O3 -s USE_SDL=2 --llvm-lto 3 --emrun --shell-file base.html -s EXPORTED_FUNCTIONS='["_play", "_save"]' -s FORCE_FILESYSTEM=1 -fno-rtti -fno-exceptions
 
 # serve wasm executable
 serve: index.html
