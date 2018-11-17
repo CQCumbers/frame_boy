@@ -6,6 +6,10 @@ body {
     color: #121e72;
     font-family: "Work Sans", sans-serif;
     margin: 0;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
 }
 
 h1 {
@@ -186,7 +190,7 @@ h1 {
     .controls {
         display: block;
         position: relative;
-        height: 15em;
+        height: 14em;
     }
 
     .control-help {
@@ -197,6 +201,8 @@ h1 {
 @media (max-width: 640px) {
     body {
         display: block;
+        position: fixed;
+        overflow: hidden;
     }
 
     h1 {
@@ -205,8 +211,7 @@ h1 {
     
     #lcd {
         position: relative;
-        left: 50%;
-        margin-left: -50vw;
+        left: 0;
         width: 100vw;
         border: 0;
     }
