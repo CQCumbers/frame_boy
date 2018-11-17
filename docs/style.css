@@ -63,9 +63,10 @@ h1 {
     width: 3.2em;
     height: 1.2em;
     position: absolute;
-    left: 10em;
-    bottom: 4em;
+    left: 8em;
+    bottom: 3em;
     border-radius: 3em;
+    border: 0;
 }
 
 .start-label {
@@ -80,15 +81,16 @@ h1 {
     width: 3.2em;
     height: 1.2em;
     position: absolute;
-    left: 15em;
-    bottom: 4em;
+    left: 12em;
+    bottom: 3em;
     border-radius: 3em;
+    border: 0;
 }
 
 .a-label {
     position: absolute;
-    right: 2.6em;
-    bottom: 8.8em;
+    right: 3.2em;
+    bottom: 8.5em;
 }
 
 .a-btn {
@@ -98,13 +100,14 @@ h1 {
     border-radius: 50%; 
     position: absolute;
     right: 2em;
-    bottom: 15em;
+    bottom: 12em;
+    border: 0;
 }
 
 .b-label {
     position: absolute;
-    right: 6.8em;
-    bottom: 6.8em;
+    right: 8.2em;
+    bottom: 6em;
 }
 
 .b-btn {
@@ -114,7 +117,8 @@ h1 {
     border-radius: 50%; 
     position: absolute;
     right: 8em;
-    bottom: 12em;
+    bottom: 9em;
+    border: 0;
 }
 
 .left-btn {

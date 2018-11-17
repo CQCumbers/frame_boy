@@ -1,3 +1,14 @@
+// register offline service worker
+if (navigator.serviceWorker.controller) {
+  console.log('[PWA Builder] active service worker found, no need to register')
+} else {
+  navigator.serviceWorker.register('worker.js', {
+    scope: './'
+  }).then(function(reg) {
+    console.log('Service worker has been registered for scope:'+ reg.scope);
+  });
+}
+
 // hack to unlock audio on iOS
 // see https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -13,6 +24,7 @@ if (context.state === 'suspended' && 'ontouchstart' in window) {
   document.body.addEventListener('touchend', unlock, false);
 }
 
+// load WASM module
 var Module = {
   preRun: [],
   postRun: [],

@@ -1,0 +1,21 @@
+{
+  "name": "Frame Boy",
+  "short_name": "FrameBoy",
+  "theme_color": "#121e72",
+  "background_color": "#f6f3f1",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/frame_boy",
+  "start_url": "cqcumbers.com/frame_boy",
+  "icons": [
+    {
+      "src": "assets/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }, {
+      "src": "assets/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
