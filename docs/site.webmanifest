@@ -5,8 +5,8 @@
   "background_color": "#f6f3f1",
   "display": "standalone",
   "orientation": "portrait",
-  "scope": "/frame_boy",
-  "start_url": "cqcumbers.com/frame_boy",
+  "scope": "/frame_boy/",
+  "start_url": "index.html",
   "icons": [
     {
       "src": "assets/android-chrome-192x192.png",
