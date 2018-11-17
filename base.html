@@ -2,100 +2,72 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="width=device-width, user-scalable=no, shrink-to-fit=no" name="viewport">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 
     <title>Frame Boy</title>
 
     <link href="https://fonts.googleapis.com/css?family=Work+Sans" rel="stylesheet">
-    <style>
-      body {
-        background-color: #f6f3f1;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        color: #121e72;
-        font-family: "Work Sans", sans-serif;
-      }
-
-      h1 {
-        font-style: italic;
-        text-transform: uppercase;
-        margin: 15px 20px;
-      }
-
-      .content {
-        margin: 0 auto;
-        padding: 0 2em;
-        max-width: 640px;
-      }
-
-      #lcd {
-        width: 100%;
-        background-color: #9bbc0f;
-        border: 5px solid #d8d8d8;
-        image-rendering: pixelated;
-      }
-    </style>
+    <link href="style.css" rel="stylesheet">
   </head>
   <body>
     <main class="content">
       <canvas id="lcd" width=640 height=576></canvas>
-      <div id="menu-buttons">
-        <input type="file" onchange="loadFile(this, 'rom.gb')">
-        <input type="file" onchange="loadFile(this, 'ram.sav')">
-        <button onclick="play()">Load</button>
-        <button onclick="save('ram.sav')">Save</button>
+      <div class="menu-buttons">
+        <label for="rom" class="btn">Select ROM</label>
+        <input type="file" id="rom" onchange="loadFile(this, 'rom.gb')" hidden>
+        <label for="ram" class="btn">Select Save</label>
+        <input type="file" id="ram" onchange="loadFile(this, 'ram.sav')" hidden>
+        <button class="btn btn-primary" onclick="play()">Load</button>
+        <button class="btn" onclick="save()">Save</button>
       </div>
       <h1>Frame Boy</h1>
-      <p>Arrow keys for direction, X/Z for A/B, Backspace for Select, Enter for Start</p>
+      <span class="control-help">
+        Arrow keys for direction, X/Z for A/B, Backspace for Select, Enter for Start
+      </span>
+      <div class="controls">
+        <label class="select-label">Select</label>
+        <button class="select-btn"
+          ontouchdown="simulateKey('keydown', 8)"
+          ontouchup="simulateKey('keyup', 8)"
+        ></button>
+        <label class="start-label">Start</label>
+        <button class="start-btn"
+          ontouchdown="simulateKey('keydown', 13)"
+          ontouchup="simulateKey('keyup', 13)"
+        ></button>
+        <label class="a-label">A</label>
+        <button class="a-btn"
+          ontouchdown="simulateKey('keydown', 88)"
+          ontouchup="simulateKey('keyup', 88)"
+        ></button>
+        <label class="b-label">B</label>
+        <button class="b-btn"
+          ontouchdown="simulateKey('keydown', 90)"
+          ontouchup="simulateKey('keyup', 90)"
+        ></button>
+        <button class="left-btn"
+          ontouchdown="simulateKey('keydown', 37)"
+          ontouchup="simulateKey('keyup', 37)"
+        ></button>
+        <button class="right-btn"
+          ontouchdown="simulateKey('keydown', 39)"
+          ontouchup="simulateKey('keyup', 39)"
+        ></button>
+        <button class="up-btn"
+          ontouchdown="simulateKey('keydown', 38)"
+          ontouchup="simulateKey('keyup', 38)"
+        ></button>
+        <button class="down-btn"
+          ontouchdown="simulateKey('keydown', 40)"
+          ontouchup="simulateKey('keyup', 40)"
+        ></button>
+        <div class="center-btn"></div>
+      </div>
     </main>
 
     <script src="FileSaver.min.js"></script>
-    <script type="text/javascript">
-      // hack to unlock audio on iOS
-      // see https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
-      var AudioContext = window.AudioContext || window.webkitAudioContext;
-      var context = new AudioContext();
-      if (context.state === 'suspended' && 'ontouchstart' in window) {
-        var unlock = () => {
-          context.resume().then(() => {
-            document.body.removeEventListener('touchstart', unlock);
-            document.body.removeEventListener('touchend', unlock);
-          });
-        };
-        document.body.addEventListener('touchstart', unlock, false);
-        document.body.addEventListener('touchend', unlock, false);
-      }
-
-      var Module = {
-        preRun: [],
-        postRun: [],
-        canvas: document.getElementById('lcd'),
-      };
-
-      var loadFile = (input, filename) => {
-        if (input.files.length == 0) return;
-        var file = input.files[0];
-        var fr = new FileReader();
-        fr.readAsArrayBuffer(file);
-        fr.onload = () => {
-          var data = new Uint8Array(fr.result);
-          FS.writeFile(filename, data);
-        };
-      };
-
-      var play = () => {
-        Module._play();
-      };
-
-      var save = (localFSname) => {
-        Module._save();
-        if (!FS.analyzePath('ram.sav').exists) return;
-        var data = FS.readFile('ram.sav');
-        var blob = new Blob([data.buffer], {type: "application/octet-binary"});
-        saveAs(blob, localFSname);
-      };
-    </script>
+    <script src="script.js"></script>
     {{{ SCRIPT }}}
   </body>
 </html>

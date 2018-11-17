@@ -1,0 +1,220 @@
+body {
+    background-color: #f6f3f1;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    color: #121e72;
+    font-family: "Work Sans", sans-serif;
+    margin: 0;
+}
+
+h1 {
+    font-style: italic;
+    font-size: 1.7em;
+    text-transform: uppercase;
+    margin: 0.2em 0;
+}
+
+.content {
+    margin: 0 auto;
+    padding: 0 2em;
+    max-width: 640px;
+}
+
+#lcd {
+    width: 100%;
+    background-color: #9bbc0f;
+    border: 5px solid #d8d8d8;
+    image-rendering: pixelated;
+}
+
+.btn {
+    padding: 0.5em 1em;
+    color: rgba(0, 0, 0, 0.80);
+    background-color: #d8d8d8;
+    font-size: 0.7em;
+    border: 0;
+    margin: 0.2em;
+}
+
+.btn:hover {
+    opacity: 0.40;
+}
+
+.btn-primary {
+    background-color: #121e72;
+    color: #fff;
+}
+
+.controls {
+    display: none;
+}
+
+/* from https://codepen.io/lukedidit/pen/wfChd */
+.select-label {
+    text-transform: uppercase; 
+    position: absolute;
+    font-size: 0.5em;
+    left: 12.5em;
+    bottom: 3em;
+}
+
+.select-btn {
+    width: 3.2em;
+    height: 1.2em;
+    position: absolute;
+    left: 10em;
+    bottom: 4em;
+    border-radius: 3em;
+}
+
+.start-label {
+    text-transform: uppercase; 
+    position: absolute;
+    font-size: 0.5em;
+    left: 18.8em;
+    bottom: 3em;
+}
+
+.start-btn {
+    width: 3.2em;
+    height: 1.2em;
+    position: absolute;
+    left: 15em;
+    bottom: 4em;
+    border-radius: 3em;
+}
+
+.a-label {
+    position: absolute;
+    right: 2.6em;
+    bottom: 8.8em;
+}
+
+.a-btn {
+    width: 5em;
+    height: 5em;
+    background-color: #954c74;
+    border-radius: 50%; 
+    position: absolute;
+    right: 2em;
+    bottom: 15em;
+}
+
+.b-label {
+    position: absolute;
+    right: 6.8em;
+    bottom: 6.8em;
+}
+
+.b-btn {
+    width: 5em;
+    height: 5em;
+    background-color: #954c74;
+    border-radius: 50%; 
+    position: absolute;
+    right: 8em;
+    bottom: 12em;
+}
+
+.left-btn {
+    position: absolute;
+    left: 0.8em;
+    bottom: 9em;
+    width: 2em;
+    height: 2em;
+    background-color: #262929;
+    border-top-left-radius: 0.3em;
+    border-bottom-left-radius: 0.3em;
+    font-size: 1em;
+    border: 0;
+}
+
+.right-btn {
+    position: absolute;
+    left: 4.8em;
+    bottom: 9em;
+    width: 2em;
+    height: 2em;
+    background-color: #262929;
+    border-top-right-radius: 0.3em;
+    border-bottom-right-radius: 0.3em;
+    font-size: 1em;
+    border: 0;
+}
+
+.up-btn {
+    position: absolute;
+    left: 2.8em;
+    bottom: 11em;
+    width: 2em;
+    height: 2em;
+    background-color: #262929;
+    border-top-left-radius: 0.3em;
+    border-top-right-radius: 0.3em;
+    font-size: 1em;
+    border: 0;
+}
+
+.down-btn {
+    position: absolute;
+    left: 2.8em;
+    bottom: 7em;
+    width: 2em;
+    height: 2em;
+    background-color: #262929;
+    border-bottom-left-radius: 0.3em;
+    border-bottom-right-radius: 0.3em;
+    font-size: 1em;
+    border: 0;
+}
+
+.center-btn {
+    position: absolute;
+    left: 2.8em;
+    bottom: 9em;
+    width: 2em;
+    height: 2em;
+    background-color: #262929;
+}
+
+@media (pointer: coarse) {
+    .controls {
+        display: block;
+        position: relative;
+        height: 15em;
+    }
+
+    .control-help {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        display: block;
+    }
+
+    h1 {
+        padding: 0.2em;
+    }
+    
+    #lcd {
+        position: relative;
+        left: 50%;
+        margin-left: -50vw;
+        width: 100vw;
+        border: 0;
+    }
+
+    .content {
+        width: 100%;
+        padding: 0;
+    }
+
+    .menu-buttons,
+    .control-help,
+    .controls {
+        padding: 0 0.2em;
+    }
+}
