@@ -16,7 +16,7 @@ h1 {
     font-style: italic;
     font-size: 1.7em;
     text-transform: uppercase;
-    margin: 0.2em 0;
+    margin: 0;
 }
 
 .content {
@@ -54,136 +54,117 @@ h1 {
     display: none;
 }
 
-/* from https://codepen.io/lukedidit/pen/wfChd */
-.select-label {
+/* based on https://codepen.io/lukedidit/pen/wfChd */
+
+.control-label {
     text-transform: uppercase; 
     position: absolute;
     font-size: 0.5em;
+}
+  
+#select-label {
     left: 12.5em;
     bottom: 3em;
 }
 
-.select-btn {
-    width: 3.2em;
-    height: 1.2em;
-    position: absolute;
-    left: 8em;
-    bottom: 3em;
-    border-radius: 3em;
-    border: 0;
-}
-
-.start-label {
-    text-transform: uppercase; 
-    position: absolute;
-    font-size: 0.5em;
+#start-label {
     left: 18.8em;
     bottom: 3em;
 }
 
-.start-btn {
+.control-btn {
     width: 3.2em;
     height: 1.2em;
     position: absolute;
-    left: 12em;
-    bottom: 3em;
+    font-size: 13.3333px;
     border-radius: 3em;
     border: 0;
+    background-color: #92969f;
 }
 
-.a-label {
+#select-btn {
+    left: 8em;
+    bottom: 3em;
+}
+
+#start-btn {
+    left: 12em;
+    bottom: 3em;
+}
+
+#a-label {
     position: absolute;
-    right: 3.2em;
-    bottom: 8.5em;
+    right: 3.4em;
+    bottom: 8.7em;
 }
 
-.a-btn {
-    width: 5em;
-    height: 5em;
+#b-label {
+    position: absolute;
+    right: 7.2em;
+    bottom: 6.5em;
+}
+
+.round-btn {
+    width: 4em;
+    height: 4em;
     background-color: #954c74;
     border-radius: 50%; 
     position: absolute;
-    right: 2em;
+    font-size: 13.3333px;
+    border: 0;
+}
+
+#a-btn {
+    right: 2.5em;
     bottom: 12em;
+}
+
+#b-btn {
+    right: 7.2em;
+    bottom: 9.5em;
+}
+
+
+.dir-btn {
+    width: 2em;
+    height: 2em;
+    position: absolute;
+    background-color: #262929;
+    font-size: 1em;
     border: 0;
 }
 
-.b-label {
-    position: absolute;
-    right: 8.2em;
-    bottom: 6em;
-}
-
-.b-btn {
-    width: 5em;
-    height: 5em;
-    background-color: #954c74;
-    border-radius: 50%; 
-    position: absolute;
-    right: 8em;
-    bottom: 9em;
-    border: 0;
-}
-
-.left-btn {
-    position: absolute;
+#left-btn {
     left: 0.8em;
     bottom: 9em;
-    width: 2em;
-    height: 2em;
-    background-color: #262929;
     border-top-left-radius: 0.3em;
     border-bottom-left-radius: 0.3em;
-    font-size: 1em;
-    border: 0;
 }
 
-.right-btn {
-    position: absolute;
+#right-btn {
     left: 4.8em;
     bottom: 9em;
-    width: 2em;
-    height: 2em;
-    background-color: #262929;
     border-top-right-radius: 0.3em;
     border-bottom-right-radius: 0.3em;
-    font-size: 1em;
-    border: 0;
 }
 
-.up-btn {
-    position: absolute;
+#up-btn {
     left: 2.8em;
     bottom: 11em;
-    width: 2em;
-    height: 2em;
-    background-color: #262929;
     border-top-left-radius: 0.3em;
     border-top-right-radius: 0.3em;
-    font-size: 1em;
-    border: 0;
 }
 
-.down-btn {
-    position: absolute;
+#down-btn {
     left: 2.8em;
     bottom: 7em;
-    width: 2em;
-    height: 2em;
-    background-color: #262929;
     border-bottom-left-radius: 0.3em;
     border-bottom-right-radius: 0.3em;
-    font-size: 1em;
-    border: 0;
 }
 
-.center-btn {
-    position: absolute;
+#center-btn {
     left: 2.8em;
     bottom: 9em;
-    width: 2em;
-    height: 2em;
-    background-color: #262929;
 }
 
 @media (pointer: coarse) {

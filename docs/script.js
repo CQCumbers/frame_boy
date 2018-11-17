@@ -1,39 +1,25 @@
 // register offline service worker
-if (navigator.serviceWorker.controller) {
-  console.log('[PWA Builder] active service worker found, no need to register')
-} else {
-  navigator.serviceWorker.register('worker.js', {
-    scope: './'
-  }).then(function(reg) {
-    console.log('Service worker has been registered for scope:'+ reg.scope);
-  });
-}
 
-// hack to unlock audio on iOS
-// see https://hackernoon.com/unlocking-web-audio-the-smarter-way-8858218c0e09
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const context = new AudioContext();
-if (context.state === 'suspended' && 'ontouchstart' in window) {
-  const unlock = () => {
-    context.resume().then(() => {
-      document.body.removeEventListener('touchstart', unlock);
-      document.body.removeEventListener('touchend', unlock);
-    });
-  };
-  document.body.addEventListener('touchstart', unlock, false);
-  document.body.addEventListener('touchend', unlock, false);
+if (!navigator.serviceWorker.controller) {
+  navigator.serviceWorker.register('worker.js', {scope: './'});
 }
 
 // load WASM module
+
 var Module = {
   preRun: [],
   postRun: [],
   canvas: document.getElementById('lcd'),
 };
 
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const context = new AudioContext();
 let lastFilename = '';
 
+// create event listeners
+
 const loadFile = (input, filename) => {
+  if (context.state === 'suspended') context.resume();
   if (input.files.length == 0) return;
   const file = input.files[0];
   let fr = new FileReader();
@@ -45,8 +31,6 @@ const loadFile = (input, filename) => {
   input.labels[0].innerHTML = file.name;
   lastFilename = file.name.replace(/\.[^/.]+$/, '');
 };
-
-const play = () => Module._play();
 
 const save = () => {
   Module._save();
@@ -63,3 +47,25 @@ const simulateKey = (type, code) => {
   });
   document.body.dispatchEvent(event);
 }
+
+// attach event listeners
+
+document.getElementById('rom')
+  .addEventListener('change', e => loadFile(e.target, 'rom.gb'));
+document.getElementById('ram')
+  .addEventListener('change', e => loadFile(e.target, 'ram.sav'));
+document.getElementById('load')
+  .addEventListener('click', e => Module._play());
+document.getElementById('save')
+  .addEventListener('click', e => save());
+
+const bindings = new Map([
+  ['select', 8], ['start', 13], ['a', 88], ['b', 90],
+  ['left', 37], ['right', 39], ['up', 38], ['down', 40]
+]);
+bindings.forEach((code, id) => {
+  document.getElementById(id + '-btn')
+    .addEventListener('pointerenter', e => simulateKey('keydown', code));
+  document.getElementById(id + '-btn')
+    .addEventListener('pointerleave', e => simulateKey('keyup', code));
+});

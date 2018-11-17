@@ -14,66 +14,49 @@
     <link rel="manifest" href="site.webmanifest">
     <meta name="theme-color" content="#121e72">
     
-    <link href="https://fonts.googleapis.com/css?family=Work+Sans" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Work+Sans:400,600" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
   </head>
   <body>
     <main class="content">
       <canvas id="lcd" width=640 height=576></canvas>
+
       <div class="menu-buttons">
         <label for="rom" class="btn">Select ROM</label>
-        <input type="file" id="rom" onchange="loadFile(this, 'rom.gb')" hidden>
+        <input type="file" id="rom" hidden>
         <label for="ram" class="btn">Select Save</label>
-        <input type="file" id="ram" onchange="loadFile(this, 'ram.sav')" hidden>
-        <button class="btn btn-primary" onclick="play()">Load</button>
-        <button class="btn" onclick="save()">Save</button>
+        <input type="file" id="ram" hidden>
+        <button class="btn btn-primary" id="load">Load</button>
+        <button class="btn" id="save">Save</button>
       </div>
+
       <h1>Frame Boy</h1>
+
       <span class="control-help">
         Arrow keys for direction, X/Z for A/B, Backspace for Select, Enter for Start
       </span>
-      <div class="controls">
-        <label class="select-label">Select</label>
-        <button class="select-btn"
-          ontouchstart="simulateKey('keydown', 8)"
-          ontouchend="simulateKey('keyup', 8)"
-        ></button>
-        <label class="start-label">Start</label>
-        <button class="start-btn"
-          ontouchstart="simulateKey('keydown', 13)"
-          ontouchend="simulateKey('keyup', 13)"
-        ></button>
-        <label class="a-label">A</label>
-        <button class="a-btn"
-          ontouchstart="simulateKey('keydown', 88)"
-          ontouchend="simulateKey('keyup', 88)"
-        ></button>
-        <label class="b-label">B</label>
-        <button class="b-btn"
-          ontouchstart="simulateKey('keydown', 90)"
-          ontouchend="simulateKey('keyup', 90)"
-        ></button>
-        <button class="left-btn"
-          ontouchstart="simulateKey('keydown', 37)"
-          ontouchend="simulateKey('keyup', 37)"
-        ></button>
-        <button class="right-btn"
-          ontouchstart="simulateKey('keydown', 39)"
-          ontouchend="simulateKey('keyup', 39)"
-        ></button>
-        <button class="up-btn"
-          ontouchstart="simulateKey('keydown', 38)"
-          ontouchend="simulateKey('keyup', 38)"
-        ></button>
-        <button class="down-btn"
-          ontouchstart="simulateKey('keydown', 40)"
-          ontouchend="simulateKey('keyup', 40)"
-        ></button>
-        <div class="center-btn"></div>
+
+      <div class="controls" touch-action="none">
+        <label class="control-label" id="select-label">Select</label>
+        <button class="control-btn" id="select-btn"></button>
+        <label class="control-label" id="start-label">Start</label>
+        <button class="control-btn" id="start-btn"></button>
+
+        <label id="a-label">A</label>
+        <button class="round-btn" id="a-btn"></button>
+        <label id="b-label">B</label>
+        <button class="round-btn" id="b-btn"></button>
+
+        <button class="dir-btn" id="left-btn"></button>
+        <button class="dir-btn" id="right-btn"></button>
+        <button class="dir-btn" id="up-btn"></button>
+        <button class="dir-btn" id="down-btn"></button>
+        <div class="dir-btn" id="center-btn"></div>
       </div>
     </main>
 
-    <script src="assets/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
     <script src="script.js"></script>
     <script async type="text/javascript" src="index.js"></script>
   </body>
