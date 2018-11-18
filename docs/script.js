@@ -33,11 +33,15 @@ const loadFile = (input, filename) => {
 };
 
 const save = () => {
-  Module._save();
+  Module.ccall('save', null, ['string'], ['ram.sav']);
   if (!FS.analyzePath('ram.sav').exists) return;
   const data = FS.readFile('ram.sav');
   const blob = new Blob([data.buffer], {type: 'application/octet-binary'});
   saveAs(blob, lastFilename + '.sav');
+};
+
+const load = () => {
+  Module.ccall('load', null, ['string', 'string'], ['rom.gb', 'ram.sav']);
 };
 
 const simulateKey = (type, code) => {
@@ -55,7 +59,7 @@ document.getElementById('rom')
 document.getElementById('ram')
   .addEventListener('change', e => loadFile(e.target, 'ram.sav'));
 document.getElementById('load')
-  .addEventListener('click', e => Module._play());
+  .addEventListener('click', e => load());
 document.getElementById('save')
   .addEventListener('click', e => save());
 
