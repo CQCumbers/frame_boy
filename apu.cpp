@@ -7,9 +7,6 @@ using namespace std;
 const array<uint8_t, 4> Channel::vol_codes = {4, 0, 1, 2};
 const array<uint8_t, 8> Channel::noise_freqs = {4, 8, 16, 24, 32, 40, 48, 56};
 const array<uint8_t, 4> Channel::duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
-const array<float, 6> filter = {0.05357142857142856, 0.17857142857142858,
-                                0.26785714285714285, 0.26785714285714285,
-                                0.17857142857142858, 0.05357142857142856};
 
 // Channel Functions
 
@@ -113,7 +110,33 @@ void Channel::update_wave() {
 
 APU::APU(Memory &mem_in) : mem(mem_in) {
   nr50 = 0x77, nr51 = 0xf3, nr52 = 0xf1;
+  left_buffer = blip_new(0x3fff);
+  right_buffer = blip_new(0x3fff);
+  blip_set_rates(left_buffer, 2097152, 44100);
+  blip_set_rates(right_buffer, 2097152, 44100);
+  mem.hook(0xff25, [&](uint8_t val) {
+    for (unsigned i = 0; i < 4; ++i) {
+      channels[i].left_on = read1(val, 4 + i);
+      channels[i].right_on = read1(val, i);
+    }
+  });
 }
+
+APU::~APU() {
+  blip_delete(left_buffer);
+  blip_delete(right_buffer);
+}
+
+const vector<int16_t> &APU::get_audio() {
+  auto start = audio.size();
+  int size = blip_samples_avail(left_buffer);
+  audio.resize(start + size * 2);
+  blip_read_samples(left_buffer, &audio[start], size, true);
+  blip_read_samples(right_buffer, &audio[start + 1], size, true);
+  return audio;
+}
+
+void APU::clear_audio() { audio.clear(); }
 
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
@@ -126,30 +149,28 @@ void APU::update(unsigned cpu_cycles) {
   last_bit = bit;
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
-    if (++sample == 48)
+    if (++sample == 48) {
       sample = 0;
-    bool skip = (sample & 0x7) != 0;
-    uint8_t left_now = 0, right_now = 0;
-    for (Channel &channel : channels) {
-      if (--channel.timer == 0)
-        channel.update_wave();
-      if (skip)
-        continue;
-      const uint8_t &ch_out = channel.get_output();
-      const uint8_t &type = static_cast<uint8_t>(channel.get_type());
-      if (read1(nr51, 4 + type))
-        left_now += ch_out;
-      if (read1(nr51, type))
-        right_now += ch_out;
+      blip_end_frame(left_buffer, 48);
+      blip_end_frame(right_buffer, 48);
     }
-    if (skip)
-      continue;
-    left_out += left_now * filter[sample >> 3] / 256;
-    right_out += right_now * filter[sample >> 3] / 256;
-    if (sample != 0)
-      continue;
-    audio.push_back(left_out * ((nr50 >> 4) & 0x7));
-    audio.push_back(left_out * (nr50 & 0x7));
-    left_out = right_out = 0;
+
+    int16_t left_delta = 0, right_delta = 0;
+    for (Channel &channel : channels) {
+      if (--channel.timer == 0) {
+        int16_t delta = channel.get_output();
+        channel.update_wave();
+        delta -= channel.get_output();
+        if (channel.left_on)
+          left_delta += delta;
+        if (channel.right_on)
+          right_delta += delta;
+      }
+    }
+
+    if (left_delta != 0)
+      blip_add_delta(left_buffer, sample, left_delta * 256);
+    if (right_delta != 0)
+      blip_add_delta(right_buffer, sample, right_delta * 256);
   }
 }

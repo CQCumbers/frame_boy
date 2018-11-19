@@ -49,15 +49,15 @@ self.__precacheManifest = [
   },
   {
     "url": "index.js",
-    "revision": "61f865904dfc92c5e92a0d9a984255f1"
+    "revision": "cdbf4743ca5d458a3803c0fc5c08cad9"
   },
   {
     "url": "index.wasm",
-    "revision": "028834a9dffd23a917a8f327949911c0"
+    "revision": "b3c9611bfee3d0fadea3de52ed30f13a"
   },
   {
     "url": "script.js",
-    "revision": "3057f74c01c27901d6d4cbf57f5b89f3"
+    "revision": "0f3070421e08576d5e17e47637daa684"
   },
   {
     "url": "site.webmanifest",

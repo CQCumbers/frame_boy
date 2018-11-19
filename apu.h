@@ -1,6 +1,7 @@
 #ifndef APU_H
 #define APU_H
 
+#include "blip_buf.h"
 #include "memory.h"
 
 // Channel Types
@@ -35,11 +36,11 @@ private:
 public:
   // Core Functions
   uint16_t timer;
+  bool left_on = true, right_on = true;
   Channel(CT type_in, Memory &mem_in);
   void update_frame(uint8_t frame_pt);
   void update_wave();
   const uint8_t &get_output() const { return output; }
-  CT get_type() const { return type; }
 };
 
 class APU {
@@ -55,8 +56,10 @@ private:
       Channel(CT::wave, mem),
       Channel(CT::noise, mem),
   }};
-  std::vector<float> audio;
-  float left_out = 0, right_out = 0;
+  uint8_t left_out = 0, right_out = 0;
+  blip_t *left_buffer, *right_buffer;
+  std::vector<int16_t> audio;
+  void write_buffers();
 
   // Registers
   uint8_t &div = mem.refh(0x04);
@@ -67,9 +70,10 @@ private:
 public:
   // Core Functions
   explicit APU(Memory &mem_in);
+  ~APU();
   void update(unsigned cpu_cycles);
-  const std::vector<float> &get_audio() const { return audio; }
-  void clear_audio() { audio.clear(); }
+  const std::vector<int16_t> &get_audio();
+  void clear_audio();
 };
 
 #endif

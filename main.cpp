@@ -63,8 +63,8 @@ void loop() {
 
   // queue audio buffer
   gameboy->update();
-  const vector<float> &audio = gameboy->get_audio();
-  SDL_QueueAudio(dev, audio.data(), 4 * static_cast<unsigned>(audio.size()));
+  const vector<int16_t> &audio = gameboy->get_audio();
+  SDL_QueueAudio(dev, audio.data(), 2 * audio.size());
   gameboy->clear_audio();
 }
 
@@ -102,9 +102,9 @@ int main() {
   SDL_AudioSpec spec;
   SDL_zero(spec);
   spec.freq = 44100;
-  spec.format = AUDIO_F32;
+  spec.format = AUDIO_S16;
   spec.channels = 2;
-  spec.samples = 4096;
+  spec.samples = 1024;
   spec.callback = nullptr;
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
   SDL_PauseAudioDevice(dev, 0);
@@ -116,10 +116,14 @@ int main() {
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(loop, -1, 1);
 #else
-  load("roms/tetris.gb", "");
+  load("roms/zelda.gb", "roms/zelda.sav");
+  unsigned next_loop = SDL_GetTicks();
   while (true) {
     loop();
-    SDL_Delay(10);
+    next_loop += 17;
+    int delay = next_loop - SDL_GetTicks();
+    if (delay > 0)
+      SDL_Delay(delay);
   }
 #endif
 }
