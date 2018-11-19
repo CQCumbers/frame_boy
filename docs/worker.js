@@ -1,43 +1,72 @@
-//This is the "Offline copy of pages" service worker
+/**
+ * Welcome to your Workbox-powered service worker!
+ *
+ * You'll need to register this file in your web app and you should
+ * disable HTTP caching for this file too.
+ * See https://goo.gl/nhQhGp
+ *
+ * The rest of the code is auto-generated. Please don't update this file
+ * directly; instead, make changes to your Workbox build configuration
+ * and re-run your build process.
+ * See https://goo.gl/2aRDsh
+ */
 
-//Install stage sets up the index page (home page) in the cache and opens a new cache
-self.addEventListener('install', function(event) {
-  var indexPage = new Request('index.html');
-  event.waitUntil(
-    fetch(indexPage).then(function(response) {
-      return caches.open('pwabuilder-offline').then(function(cache) {
-        console.log('[PWA Builder] Cached index page during Install'+ response.url);
-        return cache.put(indexPage, response);
-      });
-  }));
-});
+importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
 
-//If any fetch fails, it will look for the request in the cache and serve it from there first
-self.addEventListener('fetch', function(event) {
-  var updateCache = function(request){
-    return caches.open('pwabuilder-offline').then(function (cache) {
-      return fetch(request.clone()).then(function (response) {
-        console.log('[PWA Builder] add page to offline'+response.url)
-        return cache.put(request, response);
-      });
-    });
-  };
-
-  event.waitUntil(updateCache(event.request));
-
-  event.respondWith(
-    fetch(event.request).catch(function(error) {
-      console.log( '[PWA Builder] Network request Failed. Serving content from cache: ' + error );
-
-      //Check to see if you have it in the cache
-      //Return response
-      //If not in the cache, then return error page
-      return caches.open('pwabuilder-offline').then(function (cache) {
-        return cache.match(event.request).then(function (matching) {
-          var report =  !matching || matching.status == 404?Promise.reject('no-match'): matching;
-          return report
-        });
-      });
-    })
-  );
-})
+/**
+ * The workboxSW.precacheAndRoute() method efficiently caches and responds to
+ * requests for URLs in the manifest.
+ * See https://goo.gl/S9QRab
+ */
+self.__precacheManifest = [
+  {
+    "url": "assets/android-chrome-192x192.png",
+    "revision": "a7501bad6c2dc757572cf4b8335f66b5"
+  },
+  {
+    "url": "assets/android-chrome-512x512.png",
+    "revision": "b729243a0de4a21fc9d330e2d0a84317"
+  },
+  {
+    "url": "assets/apple-touch-icon.png",
+    "revision": "b9c4bedbe4b0a8eb5177e61b11a1845d"
+  },
+  {
+    "url": "assets/favicon-16x16.png",
+    "revision": "0f92bc117f684177a608d245f77fecf9"
+  },
+  {
+    "url": "assets/favicon-32x32.png",
+    "revision": "8b27bf316aa6c74715630ab3fdb29716"
+  },
+  {
+    "url": "favicon.ico",
+    "revision": "d8948cbccd0e4c4d78ca0e2e004a71de"
+  },
+  {
+    "url": "index.html",
+    "revision": "eab91374720689bdd9125b9e140a0da5"
+  },
+  {
+    "url": "index.js",
+    "revision": "61f865904dfc92c5e92a0d9a984255f1"
+  },
+  {
+    "url": "index.wasm",
+    "revision": "028834a9dffd23a917a8f327949911c0"
+  },
+  {
+    "url": "script.js",
+    "revision": "3057f74c01c27901d6d4cbf57f5b89f3"
+  },
+  {
+    "url": "site.webmanifest",
+    "revision": "a3db5c19fc706a315d5d226bcfe152c4"
+  },
+  {
+    "url": "style.css",
+    "revision": "53bb8437c4bf603297365b259ab0cfc2"
+  }
+].concat(self.__precacheManifest || []);
+workbox.precaching.suppressWarnings();
+workbox.precaching.precacheAndRoute(self.__precacheManifest, {});

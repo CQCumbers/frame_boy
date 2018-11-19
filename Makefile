@@ -8,6 +8,7 @@ index.html: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp 
 
 # serve wasm executable
 serve: index.html
+	workbox generateSW workbox-config.js && \
 	emrun --no_browser --port 8080 docs/index.html
 
 # Remove automatically generated files

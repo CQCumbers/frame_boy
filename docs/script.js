@@ -1,7 +1,9 @@
 // register offline service worker
 
-if (!navigator.serviceWorker.controller) {
-  navigator.serviceWorker.register('worker.js', {scope: './'});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('worker.js');
+  });
 }
 
 // setup file system
