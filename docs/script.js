@@ -4,19 +4,37 @@ if (!navigator.serviceWorker.controller) {
   navigator.serviceWorker.register('worker.js', {scope: './'});
 }
 
-// load WASM module
+// setup file system
 
+const setupFS = () => {
+  // load files from indexedDB
+  FS.mkdir('/data');
+  FS.mount(IDBFS, {}, '/data');
+  FS.syncfs(true, err => {
+    FS.currentPath = '/data';
+    if (!FS.analyzePath('filename.txt').exists) return;
+    lastFilename = FS.readFile('filename.txt', {encoding: 'utf8'});
+    document.getElementById('rom').labels[0].innerHTML = lastFilename + '.gb';
+    document.getElementById('ram').labels[0].innerHTML = lastFilename + '.sav';
+  });
+}
+
+window.onbeforeunload = () => {
+  // sync files to indexedDB
+  Module.ccall('save', null, ['string'], ['ram.sav']);
+  FS.syncfs(false, err => {});
+}
+
+var lastFilename = '';
 var Module = {
-  preRun: [],
-  postRun: [],
   canvas: document.getElementById('lcd'),
+  onRuntimeInitialized: setupFS
 };
+
+// create event listeners
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 const context = new AudioContext();
-let lastFilename = '';
-
-// create event listeners
 
 const loadFile = (input, filename) => {
   if (context.state === 'suspended') context.resume();
@@ -30,6 +48,7 @@ const loadFile = (input, filename) => {
   };
   input.labels[0].innerHTML = file.name;
   lastFilename = file.name.replace(/\.[^/.]+$/, '');
+  FS.writeFile('filename.txt', lastFilename);
 };
 
 const save = () => {
@@ -41,6 +60,7 @@ const save = () => {
 };
 
 const load = () => {
+  if (!FS.analyzePath('rom.gb').exists) return;
   Module.ccall('load', null, ['string', 'string'], ['rom.gb', 'ram.sav']);
 };
 

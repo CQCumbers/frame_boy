@@ -57,8 +57,6 @@ void loop() {
     pixels[i] = colors[lcd[i]];
 
   // draw screen texture
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xff);
-  SDL_RenderClear(renderer);
   SDL_UpdateTexture(texture, nullptr, &pixels[0], 160 * 4);
   SDL_RenderCopy(renderer, texture, nullptr, nullptr);
   SDL_RenderPresent(renderer);
@@ -95,6 +93,8 @@ int main() {
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
   SDL_CreateWindowAndRenderer(160 * 4, 144 * 4, 0, &window, &renderer);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+  SDL_SetRenderDrawColor(renderer, 0x9b, 0xbc, 0x0f, 0xff);
+  SDL_RenderClear(renderer);
   texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
                               SDL_TEXTUREACCESS_STREAMING, 160, 144);
 
