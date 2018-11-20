@@ -64,8 +64,10 @@ void loop() {
   // queue audio buffer
   gameboy->update();
   const vector<int16_t> &audio = gameboy->get_audio();
+  /*if (SDL_GetQueuedAudioSize(dev) < 1000)
+    cout << SDL_GetQueuedAudioSize(dev) << endl;*/
   SDL_QueueAudio(dev, audio.data(), 2 * audio.size());
-  gameboy->clear_audio();
+  //gameboy->clear_audio();
 }
 
 void cleanup() {
@@ -120,7 +122,7 @@ int main() {
   unsigned next_loop = SDL_GetTicks();
   while (true) {
     loop();
-    next_loop += 17;
+    next_loop += 16;
     int delay = next_loop - SDL_GetTicks();
     if (delay > 0)
       SDL_Delay(delay);

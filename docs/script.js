@@ -17,30 +17,33 @@ const setupFS = () => {
     if (!FS.analyzePath('filename.txt').exists) return;
     lastFilename = FS.readFile('filename.txt', {encoding: 'utf8'});
     document.getElementById('rom').labels[0].innerHTML = lastFilename + '.gb';
+    if (!FS.analyzePath('ram.sav').exists) return;
     document.getElementById('ram').labels[0].innerHTML = lastFilename + '.sav';
   });
-}
+};
 
-window.onbeforeunload = () => {
+const syncFS = () => {
   // sync files to indexedDB
   Module.ccall('save', null, ['string'], ['ram.sav']);
   FS.syncfs(false, err => {});
-}
+};
 
 var lastFilename = '';
-var Module = {
-  canvas: document.getElementById('lcd'),
-  onRuntimeInitialized: setupFS
-};
+window.onbeforeunload = syncFS;
+document.addEventListener('visibilitychange', syncFS);
 
 // create event listeners
 
-const AudioContext = window.AudioContext || window.webkitAudioContext;
-const context = new AudioContext();
+const unlock = () => SDL2.audioContext.resume().then(
+  () => document.getElementById('load').removeEventListener('touchend', unlock)
+);
 
 const loadFile = (input, filename) => {
-  if (context.state === 'suspended') context.resume();
   if (input.files.length == 0) return;
+  if (FS.analyzePath('ram.sav').exists) {
+    FS.writeFile('ram.sav', '');
+    document.getElementById('ram').labels[0].innerHTML = 'Select Save';
+  }
   const file = input.files[0];
   let fr = new FileReader();
   fr.readAsArrayBuffer(file);
@@ -81,9 +84,11 @@ document.getElementById('rom')
 document.getElementById('ram')
   .addEventListener('change', e => loadFile(e.target, 'ram.sav'));
 document.getElementById('load')
-  .addEventListener('click', e => load());
+  .addEventListener('click', load);
+document.getElementById('load')
+  .addEventListener('touchend', unlock);
 document.getElementById('save')
-  .addEventListener('click', e => save());
+  .addEventListener('click', save);
 
 const bindings = new Map([
   ['select', 8], ['start', 13], ['a', 88], ['b', 90],
@@ -95,3 +100,10 @@ bindings.forEach((code, id) => {
   document.getElementById(id + '-btn')
     .addEventListener('pointerleave', e => simulateKey('keyup', code));
 });
+
+// load webassembly module
+
+var Module = {
+  canvas: document.getElementById('lcd'),
+  onRuntimeInitialized: setupFS
+};

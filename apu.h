@@ -36,11 +36,13 @@ private:
 public:
   // Core Functions
   uint16_t timer;
+  int16_t last_out;
   bool left_on = true, right_on = true;
   Channel(CT type_in, Memory &mem_in);
   void update_frame(uint8_t frame_pt);
   void update_wave();
   const uint8_t &get_output() const { return output; }
+  CT get_type() const { return type; }
 };
 
 class APU {

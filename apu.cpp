@@ -17,6 +17,7 @@ Channel::Channel(CT type_in, Memory &mem_in) : mem(mem_in), type(type_in) {
       enable();
   });
   if (type == CT::wave) {
+    mem.hook(addr, [&](uint8_t val) { if (!read1(val, 7)) on = false; });
     mem.hook(addr + 1, [&](uint8_t val) { len = 0xff - val; });
     mem.hook(addr + 2,
              [&](uint8_t val) { volume = vol_codes[(val >> 5) & 0x3]; });
@@ -30,7 +31,7 @@ void Channel::enable() {
   if (type == CT::wave)
     wave_pt = 0;
   if (len == 0)
-    len = 0x3f; //(type != CT::wave ? 0x3f : 0xff);
+    len = (type != CT::wave ? 0x3f : 0xff);
   if (type != CT::wave)
     volume = nr2 >> 4;
   if (type == CT::square1) {
@@ -112,8 +113,8 @@ APU::APU(Memory &mem_in) : mem(mem_in) {
   nr50 = 0x77, nr51 = 0xf3, nr52 = 0xf1;
   left_buffer = blip_new(0x3fff);
   right_buffer = blip_new(0x3fff);
-  blip_set_rates(left_buffer, 2097152, 44100);
-  blip_set_rates(right_buffer, 2097152, 44100);
+  blip_set_rates(left_buffer, 2097152, 44200);
+  blip_set_rates(right_buffer, 2097152, 44200);
   mem.hook(0xff25, [&](uint8_t val) {
     for (unsigned i = 0; i < 4; ++i) {
       channels[i].left_on = read1(val, 4 + i);
@@ -128,15 +129,17 @@ APU::~APU() {
 }
 
 const vector<int16_t> &APU::get_audio() {
-  auto start = audio.size();
-  int size = blip_samples_avail(left_buffer);
-  audio.resize(start + size * 2);
-  blip_read_samples(left_buffer, &audio[start], size, true);
-  blip_read_samples(right_buffer, &audio[start + 1], size, true);
+  //auto start = audio.size();
+  int size = blip_samples_avail(right_buffer);
+  audio.resize(size * 2);
+  blip_read_samples(left_buffer, &audio[0], size, true);
+  blip_read_samples(right_buffer, &audio[1], size, true);
   return audio;
 }
 
-void APU::clear_audio() { audio.clear(); }
+void APU::clear_audio() {
+  audio.clear();
+}
 
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
@@ -149,28 +152,27 @@ void APU::update(unsigned cpu_cycles) {
   last_bit = bit;
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
-    if (++sample == 48) {
-      sample = 0;
-      blip_end_frame(left_buffer, 48);
-      blip_end_frame(right_buffer, 48);
+    if (++sample == 0) {
+      blip_end_frame(left_buffer, 0x101);
+      blip_end_frame(right_buffer, 0x101);
     }
 
     int16_t left_delta = 0, right_delta = 0;
     for (Channel &channel : channels) {
       if (--channel.timer == 0) {
-        int16_t delta = channel.get_output();
         channel.update_wave();
-        delta -= channel.get_output();
-        if (channel.left_on)
-          left_delta += delta;
-        if (channel.right_on)
-          right_delta += delta;
+        int16_t delta = channel.get_output() - channel.last_out;
+        channel.last_out += delta;
+        //if (channel.left_on)
+        left_delta += delta;
+        //if (channel.right_on)
+        right_delta += delta;
       }
     }
 
     if (left_delta != 0)
-      blip_add_delta(left_buffer, sample, left_delta * 256);
+      blip_add_delta_fast(left_buffer, sample, left_delta * 128);
     if (right_delta != 0)
-      blip_add_delta(right_buffer, sample, right_delta * 256);
+      blip_add_delta_fast(right_buffer, sample, right_delta * 128);
   }
 }
