@@ -51,8 +51,8 @@ public:
   void save(const std::string &save);
 
   // Memory Access Functions
-  uint8_t &ref(uint16_t addr);
-  uint8_t &refh(uint8_t addr);
+  uint8_t &ref(uint16_t addr) { return mem[addr]; }
+  uint8_t &refh(uint8_t addr) { return ref(0xff00 + addr); }
   uint8_t read(uint16_t addr) const;
   uint8_t readh(uint8_t addr) const;
   uint16_t read16(uint16_t addr) const;

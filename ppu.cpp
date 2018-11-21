@@ -59,15 +59,11 @@ void PPU::draw_sprite(Sprite &sprite) {
     tile_x = 7 - tile_x;
   if (sprite.yf)
     tile_y = 7 + (height16 << 3) - tile_y;
-  /*if (height16 && tile_y > 7)
-    tile |= 0x1, tile_y &= 0x7;*/
-  // find correct line in tile
   uint16_t addr = 0x8000 + (tile << 4) + (tile_y << 1);
   uint8_t &line = mem.ref(addr), &lineh = mem.ref(addr + 1);
   // find correct pixels in line
-  for (unsigned i = 0; i < 4; ++i, tile_x += (sprite.xf ? 1 : -1)) {
-    if (x + i >= sprite.x || x + 8 + i < sprite.x)
-      continue;
+  int dir = sprite.xf ? 1 : -1;
+  for (unsigned i = 0; i < 4; ++i, tile_x += dir) {
     uint8_t pixel = (read1(lineh, tile_x) << 1) | read1(line, tile_x);
     // check sprite rendering priority
     if (pixel != 0 && (!sprite.p || pixels[i] == 0)) {
@@ -79,7 +75,6 @@ void PPU::draw_sprite(Sprite &sprite) {
 
 void PPU::draw() {
   // draw background or blank
-  pixels.fill(0);
   palettes.fill(bgp);
   if (read1(lcdc, 0)) {
     for (uint8_t i = 0, j = scx + x; i < 4; ++i, ++j)
@@ -92,8 +87,9 @@ void PPU::draw() {
   }
   // draw sprites
   for (Sprite &sprite : sprites) {
-    if (!(x >= sprite.x || x + 11 < sprite.x))
-      draw_sprite(sprite);
+    if (x >= sprite.x || x + 11 < sprite.x)
+      continue;
+    draw_sprite(sprite);
   }
   // apply palette
   for (uint16_t i = 0, j = ly * 160 + x; i < 4; ++i, ++j) {
@@ -148,60 +144,57 @@ void PPU::update(unsigned cpu_cycles) {
   // change mode & draw lcd
   if (read1(lcdc, 7)) {
     for (unsigned i = 0; i < cpu_cycles; ++i, ++cycles) {
-      switch (stat & 0x3) {
-      case 0: // H-BLANK
-        if (cycles == 93) {
-          cycles = 0;
-          ++ly;
-          check_lyc();
-          unsigned mode = (ly == 144 ? 1 : 2);
-          if (mode == 1)
-            IF = write1(IF, 0, true);
-          else
-            mem.mask(Range(0xfe00, 0xfe9f), 0x0);
-          if (read1(stat, 3 + mode))
-            IF = write1(IF, 1, true);
-          stat = (stat & 0xfc) | mode;
-        }
-        break;
+      switch (mode) {
+      case 0: { // H-BLANK
+        if (cycles != 93)
+          continue;
+        cycles = 0, ++ly, check_lyc();
+        mode = (ly == 144 ? 1 : 2);
+        if (mode == 1)
+          IF = write1(IF, 0, true);
+        else
+          mem.mask(Range(0xfe00, 0xfe9f), 0x0);
+        if (read1(stat, 3 + mode))
+          IF = write1(IF, 1, true);
+        stat = (stat & 0xfc) | mode;
+        continue;
+      }
       case 1: // V-BLANK
-        if (cycles == 113) {
-          if (ly == 154) {
-            ly = -1;
-            stat = (stat & 0xfc) | 2;
-            if (read1(stat, 5))
-              IF = write1(IF, 1, true);
-          }
-          cycles = 0;
-          ++ly;
-          check_lyc();
+        if (cycles != 113)
+          continue;
+        if (ly == 154) {
+          ly = -1, mode = 2;
+          stat = (stat & 0xfc) | 2;
+          if (read1(stat, 5))
+            IF = write1(IF, 1, true);
         }
-        break;
+        cycles = 0, ++ly, check_lyc();
+        continue;
       case 2: // Using OAM
-        if (cycles == 19) {
-          cycles = x = 0;
-          get_sprites();
-          mem.mask(Range(0x8000, 0x9fff), 0x0);
-          stat = (stat & 0xfc) | 3;
-        }
-        break;
+        if (cycles != 19)
+          continue;
+        cycles = x = 0;
+        get_sprites();
+        mem.mask(Range(0x8000, 0x9fff), 0x0);
+        stat = (stat & 0xfc) | 3, mode = 3;
+        continue;
       case 3: // Using VRAM
         if (cycles >= 3)
           draw();
-        if (x == 160) {
-          if (read1(stat, 3))
-            IF = write1(IF, 1, true);
-          mem.mask(Range(0xfe00, 0xfe9f), 0xff);
-          mem.mask(Range(0x8000, 0x9fff), 0xff);
-          stat = stat & 0xfc;
-        }
-        break;
+        if (x != 160)
+          continue;
+        if (read1(stat, 3))
+          IF = write1(IF, 1, true);
+        mem.mask(Range(0xfe00, 0xfe9f), 0xff);
+        mem.mask(Range(0x8000, 0x9fff), 0xff);
+        stat = stat & 0xfc, mode = 0;
+        continue;
       }
     }
   } else if (cycles != 0) {
     // reset state when LCD off
     cycles = ly = x = 0;
     lcd.fill(0);
-    stat = stat & 0xfc;
+    stat = stat & 0xfc, mode = 0;
   }
 }

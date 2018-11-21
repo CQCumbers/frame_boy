@@ -146,11 +146,6 @@ void Memory::save(const string &save) {
 
 // Memory Access Functions
 
-// for access without masks & hooks
-uint8_t &Memory::ref(uint16_t addr) { return mem[addr]; }
-
-uint8_t &Memory::refh(uint8_t addr) { return ref(0xff00 + addr); }
-
 uint8_t Memory::read(uint16_t addr) const {
   if (!rmasks.count(addr))
     return mem[addr];

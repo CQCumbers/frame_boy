@@ -64,10 +64,7 @@ void loop() {
   // queue audio buffer
   gameboy->update();
   const vector<int16_t> &audio = gameboy->get_audio();
-  /*if (SDL_GetQueuedAudioSize(dev) < 1000)
-    cout << SDL_GetQueuedAudioSize(dev) << endl;*/
   SDL_QueueAudio(dev, audio.data(), 2 * audio.size());
-  //gameboy->clear_audio();
 }
 
 void cleanup() {
@@ -106,7 +103,7 @@ int main() {
   spec.freq = 44100;
   spec.format = AUDIO_S16;
   spec.channels = 2;
-  spec.samples = 1024;
+  spec.samples = 4096;
   spec.callback = nullptr;
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
   SDL_PauseAudioDevice(dev, 0);

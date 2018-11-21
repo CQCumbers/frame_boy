@@ -26,9 +26,12 @@ private:
   std::array<uint8_t, 160 * 144> lcd;
   unsigned cycles = 0, dma_i = 161;
   uint16_t x = 0, dma_src = 0;
+
+  // Cached Properties
   uint16_t bg_tiles = 0x8800;
   uint16_t bg_map = 0x9800;
   uint16_t win_map = 0x9800;
+  uint8_t mode = 0;
   bool height16 = false;
 
   // Registers

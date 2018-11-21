@@ -17,7 +17,10 @@ Channel::Channel(CT type_in, Memory &mem_in) : mem(mem_in), type(type_in) {
       enable();
   });
   if (type == CT::wave) {
-    mem.hook(addr, [&](uint8_t val) { if (!read1(val, 7)) on = false; });
+    mem.hook(addr, [&](uint8_t val) {
+      if (!read1(val, 7))
+        on = false;
+    });
     mem.hook(addr + 1, [&](uint8_t val) { len = 0xff - val; });
     mem.hook(addr + 2,
              [&](uint8_t val) { volume = vol_codes[(val >> 5) & 0x3]; });
@@ -129,7 +132,6 @@ APU::~APU() {
 }
 
 const vector<int16_t> &APU::get_audio() {
-  //auto start = audio.size();
   int size = blip_samples_avail(right_buffer);
   audio.resize(size * 2);
   blip_read_samples(left_buffer, &audio[0], size, true);
@@ -137,9 +139,7 @@ const vector<int16_t> &APU::get_audio() {
   return audio;
 }
 
-void APU::clear_audio() {
-  audio.clear();
-}
+void APU::clear_audio() { audio.clear(); }
 
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
@@ -159,15 +159,15 @@ void APU::update(unsigned cpu_cycles) {
 
     int16_t left_delta = 0, right_delta = 0;
     for (Channel &channel : channels) {
-      if (--channel.timer == 0) {
-        channel.update_wave();
-        int16_t delta = channel.get_output() - channel.last_out;
-        channel.last_out += delta;
-        //if (channel.left_on)
+      if (--channel.timer != 0)
+        continue;
+      channel.update_wave();
+      int16_t delta = channel.get_output() - channel.last_out;
+      channel.last_out += delta;
+      if (channel.left_on)
         left_delta += delta;
-        //if (channel.right_on)
+      if (channel.right_on)
         right_delta += delta;
-      }
     }
 
     if (left_delta != 0)
