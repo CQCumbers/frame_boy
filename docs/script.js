@@ -34,9 +34,13 @@ document.addEventListener('visibilitychange', syncFS);
 
 // create event listeners
 
-const unlock = () => SDL2.audioContext.resume().then(
-  () => document.getElementById('load').removeEventListener('touchend', unlock)
-);
+const unlock = () => {
+  SDL2.audioContext.resume().then(() => {
+    let button = document.getElementById('load');
+    button.removeEventListener('click', unlock);
+    button.removeEventListener('touchend', unlock);
+  });
+};
 
 const loadFile = (input, filename) => {
   if (input.files.length == 0) return;
@@ -85,6 +89,8 @@ document.getElementById('ram')
   .addEventListener('change', e => loadFile(e.target, 'ram.sav'));
 document.getElementById('load')
   .addEventListener('click', load);
+document.getElementById('load')
+  .addEventListener('click', unlock);
 document.getElementById('load')
   .addEventListener('touchend', unlock);
 document.getElementById('save')
