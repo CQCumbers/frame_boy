@@ -53,7 +53,7 @@ self.__precacheManifest = [
   },
   {
     "url": "index.wasm",
-    "revision": "b4fa380a88960adc68dbfedd09c41ad1"
+    "revision": "409c06e0c419384c02e40af893ee7750"
   },
   {
     "url": "script.js",

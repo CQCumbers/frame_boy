@@ -1134,7 +1134,7 @@ unsigned CPU::execute() {
     break;
   // Miscellaneous Instructions
   case 0x76: // HALT
-    halt = true;
+    halt = ime || (IF & IE & 0x1f) == 0;
     break;
   case 0x10: // STOP
     stop = true;

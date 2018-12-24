@@ -110,7 +110,7 @@ void PPU::check_lyc() const {
 PPU::PPU(Memory &mem_in) : mem(mem_in) {
   // set initial register values
   lcdc = 0x91, stat = 0x81;
-  ly = 0x90, bgp = 0xfc;
+  ly = 0x8f, bgp = 0xfc;
   IF = 0xe1;
   lcd.fill(0x0);
   // set r/w permission bitmasks
@@ -150,9 +150,7 @@ void PPU::update(unsigned cpu_cycles) {
           continue;
         cycles = 0, ++ly, check_lyc();
         mode = (ly == 144 ? 1 : 2);
-        if (mode == 1)
-          IF = write1(IF, 0, true);
-        else
+        if (mode == 2)
           mem.mask(Range(0xfe00, 0xfe9f), 0x0);
         if (read1(stat, 3 + mode))
           IF = write1(IF, 1, true);
@@ -160,6 +158,8 @@ void PPU::update(unsigned cpu_cycles) {
         continue;
       }
       case 1: // V-BLANK
+        if (ly == 144 && cycles == 4)
+          IF = write1(IF, 0, true);
         if (cycles != 113)
           continue;
         if (ly == 154) {

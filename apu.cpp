@@ -153,8 +153,8 @@ void APU::update(unsigned cpu_cycles) {
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
     if (++sample == 0) {
-      blip_end_frame(left_buffer, 0x101);
-      blip_end_frame(right_buffer, 0x101);
+      blip_end_frame(left_buffer, 0xff);
+      blip_end_frame(right_buffer, 0xff);
     }
 
     int16_t left_delta = 0, right_delta = 0;
