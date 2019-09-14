@@ -90,8 +90,7 @@ extern "C" {
 int main() {
   // setup SDL video
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-  SDL_CreateWindowAndRenderer(160 * 4, 144 * 4, 0, &window, &renderer);
-  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
+  SDL_CreateWindowAndRenderer(160, 144, 0, &window, &renderer);
   SDL_SetRenderDrawColor(renderer, 0x9b, 0xbc, 0x0f, 0xff);
   SDL_RenderClear(renderer);
   texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
@@ -103,7 +102,7 @@ int main() {
   spec.freq = 44100;
   spec.format = AUDIO_S16;
   spec.channels = 2;
-  spec.samples = 4096;
+  spec.samples = 512;
   spec.callback = nullptr;
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
   SDL_PauseAudioDevice(dev, 0);
@@ -115,6 +114,7 @@ int main() {
 #ifdef __EMSCRIPTEN__
   emscripten_set_main_loop(loop, -1, 1);
 #else
+  SDL_SetWindowSize(window, 160 * 4, 144 * 4);
   load("roms/zelda.gb", "roms/zelda.sav");
   unsigned next_loop = SDL_GetTicks();
   while (true) {

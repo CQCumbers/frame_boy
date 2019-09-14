@@ -49,7 +49,7 @@ class APU {
 private:
   // Internal State
   Memory &mem;
-  uint8_t sample = 0;
+  uint16_t sample = 0;
   uint8_t frame_pt = 0;
   bool last_bit = 0;
   std::array<Channel, 4> channels = {{
@@ -58,10 +58,8 @@ private:
       Channel(CT::wave, mem),
       Channel(CT::noise, mem),
   }};
-  uint8_t left_out = 0, right_out = 0;
   blip_t *left_buffer, *right_buffer;
   std::vector<int16_t> audio;
-  void write_buffers();
 
   // Registers
   uint8_t &div = mem.refh(0x04);
@@ -75,7 +73,6 @@ public:
   ~APU();
   void update(unsigned cpu_cycles);
   const std::vector<int16_t> &get_audio();
-  void clear_audio();
 };
 
 #endif

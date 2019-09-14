@@ -87,12 +87,12 @@ void Channel::update_wave() {
     uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
     timer = (0x800 - freq) + 1;
     wave_pt = (wave_pt + 1) & 0x1f;
-    uint8_t sample = mem.refh(0x30 + (wave_pt >> 1));
+    uint8_t wave_s = mem.refh(0x30 + (wave_pt >> 1));
     if (read1(wave_pt, 0))
-      sample >>= 4;
+      wave_s >>= 4;
     else
-      sample &= 0xf;
-    output = on * (sample >> volume);
+      wave_s &= 0xf;
+    output = on * (wave_s >> volume);
     break;
   }
   case CT::noise: {
@@ -112,10 +112,10 @@ void Channel::update_wave() {
 
 APU::APU(Memory &mem_in) : mem(mem_in) {
   nr50 = 0x77, nr51 = 0xf3, nr52 = 0xf1;
-  left_buffer = blip_new(0x3fff);
-  right_buffer = blip_new(0x3fff);
-  blip_set_rates(left_buffer, 2097152, 44200);
-  blip_set_rates(right_buffer, 2097152, 44200);
+  left_buffer = blip_new(4410);
+  right_buffer = blip_new(4410);
+  blip_set_rates(left_buffer, 2097152, 44100 * 1.01);
+  blip_set_rates(right_buffer, 2097152, 44100 * 1.01);
   mem.hook(0xff25, [&](uint8_t val) {
     for (unsigned i = 0; i < 4; ++i) {
       channels[i].left_on = read1(val, 4 + i);
@@ -130,14 +130,16 @@ APU::~APU() {
 }
 
 const std::vector<int16_t> &APU::get_audio() {
+  blip_end_frame(left_buffer, sample + 1);
+  blip_end_frame(right_buffer, sample + 1);
+  sample = 0;
+
   int size = blip_samples_avail(right_buffer);
   audio.resize(size * 2);
   blip_read_samples(left_buffer, &audio[0], size, true);
   blip_read_samples(right_buffer, &audio[1], size, true);
   return audio;
 }
-
-void APU::clear_audio() { audio.clear(); }
 
 void APU::update(unsigned cpu_cycles) {
   // update frame sequencer
@@ -150,9 +152,13 @@ void APU::update(unsigned cpu_cycles) {
   last_bit = bit;
   // update wave generator
   for (unsigned i = 0; i < cpu_cycles * 2; ++i) {
-    if (++sample == 0) {
-      blip_end_frame(left_buffer, 0xff);
-      blip_end_frame(right_buffer, 0xff);
+    if ((sample = (sample + 1) & 0x7ff) == 0) {
+      if (blip_samples_avail(right_buffer) > 4310) {
+        blip_clear(left_buffer);
+        blip_clear(right_buffer);
+      }
+      blip_end_frame(left_buffer, 0x800);
+      blip_end_frame(right_buffer, 0x800);
     }
 
     int16_t left_delta = 0, right_delta = 0;
@@ -169,8 +175,8 @@ void APU::update(unsigned cpu_cycles) {
     }
 
     if (left_delta != 0)
-      blip_add_delta_fast(left_buffer, sample, left_delta * 128);
+      blip_add_delta(left_buffer, sample, left_delta * 128);
     if (right_delta != 0)
-      blip_add_delta_fast(right_buffer, sample, right_delta * 128);
+      blip_add_delta(right_buffer, sample, right_delta * 128);
   }
 }

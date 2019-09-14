@@ -26,7 +26,6 @@ struct Gameboy {
   }
   const std::vector<int16_t> &get_audio() { return apu.get_audio(); }
   void save(const std::string &save) { mem.save(save); }
-  void clear_audio() { apu.clear_audio(); }
 
   // Debug Functions
   void print() const { cpu.print(); }

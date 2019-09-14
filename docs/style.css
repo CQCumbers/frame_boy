@@ -29,7 +29,11 @@ h1 {
     width: 100%;
     background-color: #9bbc0f;
     border: 5px solid #d8d8d8;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -o-crisp-edges;
     image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
 }
 
 .btn {
