@@ -1,12 +1,10 @@
 #include "apu.h"
 
-using namespace std;
-
 // Static Tables
 
-const array<uint8_t, 4> Channel::vol_codes = {4, 0, 1, 2};
-const array<uint8_t, 8> Channel::noise_freqs = {4, 8, 16, 24, 32, 40, 48, 56};
-const array<uint8_t, 4> Channel::duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
+const std::array<uint8_t, 4> Channel::vol_codes = {4, 0, 1, 2};
+const std::array<uint8_t, 8> Channel::noise_freqs = {4, 8, 16, 24, 32, 40, 48, 56};
+const std::array<uint8_t, 4> Channel::duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
 
 // Channel Functions
 
@@ -131,7 +129,7 @@ APU::~APU() {
   blip_delete(right_buffer);
 }
 
-const vector<int16_t> &APU::get_audio() {
+const std::vector<int16_t> &APU::get_audio() {
   int size = blip_samples_avail(right_buffer);
   audio.resize(size * 2);
   blip_read_samples(left_buffer, &audio[0], size, true);

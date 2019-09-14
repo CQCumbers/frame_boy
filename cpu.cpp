@@ -1,8 +1,6 @@
 #include "cpu.h"
 #include <cassert>
-#include <iostream>
-
-using namespace std;
+#include <cstdio>
 
 // Arithmetic Functions
 
@@ -1150,8 +1148,7 @@ unsigned CPU::execute() {
     break;
   default:
     --pc;
-    cout << "Unimplemented opcode " << hex << (unsigned)mem.read(pc) << " at "
-         << (unsigned)pc << endl;
+    printf("Unimplemented opcode %hhx at %hx\n", mem.read(pc), pc);
     assert(false);
   }
 
@@ -1967,13 +1964,14 @@ void CPU::execute_cb() {
 // Debug Functions
 
 void CPU::print() const {
-  cout << "PC: " << hex << pc << "\n"
-       << "op: " << static_cast<unsigned>(mem.read(pc)) << "\n"
-       << " F: " << (f.z ? "Z " : " ") << (f.n ? "N " : " ")
-       << (f.h ? "H " : " ") << (f.c ? "C " : " ") << "\n"
-       << "AF: " << af << "\n"
-       << "BC: " << bc << "\n"
-       << "DE: " << de << "\n"
-       << "HL: " << hl << "\n"
-       << "SP: " << sp << endl;
+  printf("PC: %hx\n", pc);
+  printf("op: %hhx\n", mem.read(pc));
+  printf(" F: %c %c %c %c\n",
+    f.z ? 'Z' : ' ', f.n ? 'N' : ' ',
+    f.h ? 'H' : ' ', f.c ? 'C' : ' ');
+  printf("AF: %hx\n", af);
+  printf("BC: %hx\n", bc);
+  printf("DE: %hx\n", de);
+  printf("HL: %hx\n", hl);
+  printf("SP: %hx\n", sp);
 }

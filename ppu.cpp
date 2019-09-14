@@ -1,8 +1,5 @@
 #include "ppu.h"
 #include <algorithm>
-#include <iostream>
-
-using namespace std;
 
 // Sprite Functions
 
@@ -35,7 +32,7 @@ void PPU::get_sprites() {
       break;
   }
   // sort sprites by priority
-  sort(sprites.begin(), sprites.end());
+  std::sort(sprites.begin(), sprites.end());
 }
 
 void PPU::draw_tile(uint16_t map, uint8_t x, uint8_t y, unsigned i) {

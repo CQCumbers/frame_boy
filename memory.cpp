@@ -1,9 +1,6 @@
 #include "memory.h"
 #include <algorithm>
-#include <cassert>
-#include <fstream>
-
-using namespace std;
+#include <string>
 
 // Range Functions
 
@@ -19,27 +16,29 @@ bool Range::operator==(const Range &r) const {
 
 // Core Functions
 
-Memory::Memory(const string &filename, const string &save) {
-  // read rom into vector
-  ifstream file(filename, ios::binary);
-  assert(file.good());
+Memory::Memory(const std::string &filename, const std::string &save) {
+  // open rom file
+  FILE *file = fopen(filename.c_str(), "r");
+  assert(file != nullptr);
+  fseek(file, 0, SEEK_END);
+  long size = ftell(file);
+  fseek(file, 0, SEEK_SET);
 
   // resize & read rom
-  file.seekg(0, ios::end);
-  streampos size = file.tellg();
-  file.seekg(0, ios::beg);
   rom.resize(size);
-  file.read(reinterpret_cast<char *>(&rom[0]), size);
-  copy_n(&rom[0], 0x8000, &mem[0]);
+  fread(&rom[0], 1, size, file);
+  std::copy_n(&rom[0], 0x8000, &mem[0]);
   rom.resize(0x8000 << rom_size);
+  fclose(file);
 
   // resize & read ram
-  array<unsigned, 6> ram_sizes = {0, 2, 8, 32, 128, 64};
+  std::array<unsigned, 6> ram_sizes = {0, 2, 8, 32, 128, 64};
   ram.resize(ram_sizes[ram_size] << 10);
-  ifstream save_file(save, ios::binary);
-  if (save_file.good()) {
-    save_file.read(reinterpret_cast<char *>(&ram[0]), ram.size());
-    copy_n(&ram[0], 0x2000, &mem[0xa000]);
+  file = fopen(save.c_str(), "r");
+  if (file != nullptr) {
+    fread(&ram[0], 1, ram.size(), file);
+    std::copy_n(&ram[0], 0x2000, &mem[0xa000]);
+    fclose(file);
   }
 
   // set r/w permission bitmasks
@@ -124,24 +123,25 @@ void Memory::hook(Range addr, std::function<void(uint8_t)> hook) {
 
 void Memory::swap_rom(unsigned bank) {
   bank &= (0x2 << rom_size) - 1;
-  copy_n(&rom[bank * 0x4000], 0x4000, &mem[0x4000]);
+  std::copy_n(&rom[bank * 0x4000], 0x4000, &mem[0x4000]);
 }
 
 void Memory::swap_ram(unsigned bank) {
   bank &= (ram.size() >> 13) - 1;
   if (bank == ram_bank || ram.size() <= 0x2000)
     return;
-  copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
-  copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);
+  std::copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
+  std::copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);
   ram_bank = bank;
 }
 
-void Memory::save(const string &save) {
-  if (mbc == 0)
+void Memory::save(const std::string &save) {
+  FILE *file = fopen(save.c_str(), "r");
+  if (file == nullptr || mbc == 0)
     return;
-  copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
-  ofstream save_file(save, ios::binary);
-  save_file.write(reinterpret_cast<char *>(&ram[0]), ram.size());
+  std::copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
+  fwrite(&ram[0], 1, ram.size(), file);
+  fclose(file);
 }
 
 // Memory Access Functions

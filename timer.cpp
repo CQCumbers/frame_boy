@@ -1,10 +1,8 @@
 #include "timer.h"
 
-using namespace std;
-
 // Static Tables
 
-const array<uint8_t, 4> Timer::freq_bits = {9, 3, 5, 7};
+const std::array<uint8_t, 4> Timer::freq_bits = {9, 3, 5, 7};
 
 // Core Functions
 

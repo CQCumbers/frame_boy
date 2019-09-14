@@ -35,7 +35,7 @@ document.addEventListener('visibilitychange', syncFS);
 // create event listeners
 
 const unlock = () => {
-  SDL2.audioContext.resume().then(() => {
+  Module.SDL2.audioContext.resume().then(() => {
     let button = document.getElementById('load');
     button.removeEventListener('click', unlock);
     button.removeEventListener('touchend', unlock);

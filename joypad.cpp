@@ -1,7 +1,5 @@
 #include "joypad.h"
 
-using namespace std;
-
 // Core Functions
 
 Joypad::Joypad(Memory &mem_in) : mem(mem_in) {
