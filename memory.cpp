@@ -8,7 +8,9 @@ Range::Range(uint16_t addr) : start(addr), end(addr) {}
 
 Range::Range(uint16_t start, uint16_t end) : start(start), end(end) {}
 
-bool Range::operator<(const Range &r) const { return end < r.start; }
+bool Range::operator<(const Range &r) const {
+  return end < r.start;
+}
 
 bool Range::operator==(const Range &r) const {
   return start >= r.start && end <= r.end;
@@ -55,8 +57,7 @@ Memory::Memory(const std::string &filename, const std::string &save) {
     mbc = 5;
   clock = (type == Range(0xf, 0x10));
   rumble = (type == Range(0x1c, 0x1e));
-  if (mbc == 0)
-    return;
+  if (mbc == 0) return;
 
   hook(Range(0x0, 0x1fff), [&](uint8_t val) {
     if ((val & 0xf) == 0xa) {
@@ -72,8 +73,7 @@ Memory::Memory(const std::string &filename, const std::string &save) {
       val &= 0x1f;
     else if (mbc == 3)
       val &= 0x7f;
-    if (val == 0)
-      val = 1;
+    if (val == 0) val = 1;
     if (mbc == 1) {
       bank = (bank & 0x60) | val;
       if (ram_mode)
@@ -92,8 +92,7 @@ Memory::Memory(const std::string &filename, const std::string &save) {
       else
         swap_rom(bank), swap_ram(0);
     } else {
-      if (rumble)
-        val &= 0x7;
+      if (rumble) val &= 0x7;
       swap_ram(val);
     }
   });
@@ -108,9 +107,13 @@ Memory::Memory(const std::string &filename, const std::string &save) {
   });
 }
 
-void Memory::rmask(Range addr, uint8_t mask) { rmasks[addr] = mask; }
+void Memory::rmask(Range addr, uint8_t mask) {
+  rmasks[addr] = mask;
+}
 
-void Memory::wmask(Range addr, uint8_t mask) { wmasks[addr] = mask; }
+void Memory::wmask(Range addr, uint8_t mask) {
+  wmasks[addr] = mask;
+}
 
 void Memory::mask(Range addr, uint8_t mask) {
   rmask(addr, mask);
@@ -128,8 +131,7 @@ void Memory::swap_rom(unsigned bank) {
 
 void Memory::swap_ram(unsigned bank) {
   bank &= (ram.size() >> 13) - 1;
-  if (bank == ram_bank || ram.size() <= 0x2000)
-    return;
+  if (bank == ram_bank || ram.size() <= 0x2000) return;
   std::copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
   std::copy_n(&ram[bank * 0x2000], 0x2000, &mem[0xa000]);
   ram_bank = bank;
@@ -137,8 +139,7 @@ void Memory::swap_ram(unsigned bank) {
 
 void Memory::save(const std::string &save) {
   FILE *file = fopen(save.c_str(), "r");
-  if (file == nullptr || mbc == 0)
-    return;
+  if (file == nullptr || mbc == 0) return;
   std::copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
   fwrite(&ram[0], 1, ram.size(), file);
   fclose(file);
@@ -147,27 +148,29 @@ void Memory::save(const std::string &save) {
 // Memory Access Functions
 
 uint8_t Memory::read(uint16_t addr) const {
-  if (!rmasks.count(addr))
-    return mem[addr];
+  if (!rmasks.count(addr)) return mem[addr];
   return mem[addr] | ~rmasks.at(addr);
 }
 
-uint8_t Memory::readh(uint8_t addr) const { return read(0xff00 + addr); }
+uint8_t Memory::readh(uint8_t addr) const {
+  return read(0xff00 + addr);
+}
 
 uint16_t Memory::read16(uint16_t addr) const {
   return (read(addr + 1) << 8) | read(addr);
 }
 
 void Memory::write(uint16_t addr, uint8_t val) {
-  if (hooks.count(addr))
-    hooks[addr](val);
+  if (hooks.count(addr)) hooks[addr](val);
   if (!wmasks.count(addr))
     mem[addr] = val;
   else
     mem[addr] = (val & wmasks.at(addr)) | (mem[addr] & ~wmasks.at(addr));
 }
 
-void Memory::writeh(uint8_t addr, uint8_t val) { write(0xff00 + addr, val); }
+void Memory::writeh(uint8_t addr, uint8_t val) {
+  write(0xff00 + addr, val);
+}
 
 void Memory::write16(uint16_t addr, uint16_t val) {
   write(addr + 1, val >> 8);

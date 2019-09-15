@@ -1,0 +1,7 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: true
+...

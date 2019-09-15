@@ -10,8 +10,8 @@ enum class CT { square1, square2, wave, noise };
 class Channel {
 private:
   // Static Tables
-  static const std::array<uint8_t, 4> vol_codes;
-  static const std::array<uint8_t, 8> noise_freqs;
+  static const std::array<uint8_t, 4> vol_code;
+  static const std::array<uint8_t, 8> divisors;
   static const std::array<uint8_t, 4> duty_cycles;
 
   // Internal State
@@ -20,7 +20,7 @@ private:
   const uint16_t addr = 0xff10 + static_cast<uint16_t>(type) * 5;
 
   bool on = false, sweep_on = false;
-  uint8_t wave_pt = 0, volume = 16, output = 0;
+  uint8_t wave_pt = 0, vol = 16, output = 0;
   uint16_t len = 0, vol_len = 0;
   uint16_t sweep_len = 0, sweep_freq = 0;
   uint16_t lsfr = 0;
@@ -35,8 +35,8 @@ private:
 
 public:
   // Core Functions
-  uint16_t timer;
-  int16_t last_out;
+  uint16_t timer = 0;
+  int16_t last_out = 0;
   bool left_on = true, right_on = true;
   Channel(CT type_in, Memory &mem_in);
   void update_sweep();

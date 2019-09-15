@@ -44,7 +44,7 @@ private:
 
   // Drawing Functions
   void get_sprites();
-  void draw_sprite(Sprite &sprite);
+  void draw_sprite(const Sprite &sprite);
   void draw_tile(uint16_t map, uint8_t x, uint8_t y, unsigned i);
   void draw();
   void check_lyc() const;

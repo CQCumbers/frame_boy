@@ -162,11 +162,9 @@ inline void CPU::bit(uint8_t n, uint8_t a) {
 void CPU::check_interrupts() {
   // call appropriate interrupt, lower bit priority
   uint8_t interrupt = ffs(IF & IE & 0x1f);
-  if (interrupt == 0)
-    return;
+  if (interrupt == 0) return;
   if (ime) {
-    if (halt)
-      ++cycles;
+    if (halt) ++cycles;
     sp -= 2;
     mem.write16(sp, pc);
     pc = 0x40 + 0x8 * (interrupt - 1);
@@ -180,10 +178,8 @@ void CPU::check_interrupts() {
 unsigned CPU::execute() {
   cycles = 1;
   check_interrupts();
-  if (halt)
-    return 1;
-  if (ime_scheduled)
-    ime = true, ime_scheduled = false;
+  if (halt) return 1;
+  if (ime_scheduled) ime = true, ime_scheduled = false;
 
   switch (mem.read(pc++)) {
   // 8-Bit Load & Store Instructions
@@ -832,10 +828,8 @@ unsigned CPU::execute() {
     break;
   case 0x27: { // DAA
     uint8_t u = 0;
-    if (f.h || (!f.n && (a & 0xf) > 0x9))
-      u = 0x6;
-    if (f.c || (!f.n && a > 0x99))
-      u |= 0x60, f.c = true;
+    if (f.h || (!f.n && (a & 0xf) > 0x9)) u = 0x6;
+    if (f.c || (!f.n && a > 0x99)) u |= 0x60, f.c = true;
     a = f.n ? a - u : a + u;
     f.h = false;
     f.z = (a == 0);
@@ -1966,9 +1960,8 @@ void CPU::execute_cb() {
 void CPU::print() const {
   printf("PC: %hx\n", pc);
   printf("op: %hhx\n", mem.read(pc));
-  printf(" F: %c %c %c %c\n",
-    f.z ? 'Z' : ' ', f.n ? 'N' : ' ',
-    f.h ? 'H' : ' ', f.c ? 'C' : ' ');
+  printf(" F: %c %c %c %c\n", f.z ? 'Z' : ' ', f.n ? 'N' : ' ', f.h ? 'H' : ' ',
+         f.c ? 'C' : ' ');
   printf("AF: %hx\n", af);
   printf("BC: %hx\n", bc);
   printf("DE: %hx\n", de);

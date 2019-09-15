@@ -1,7 +1,7 @@
 // register offline service worker
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
+  window.addEventListener('load', () => {
     navigator.serviceWorker.register('worker.js');
   });
 }
@@ -84,9 +84,9 @@ const simulateKey = (type, code) => {
 // attach event listeners
 
 document.getElementById('rom')
-  .addEventListener('change', e => loadFile(e.target, 'rom.gb'));
+  .addEventListener('change', () => loadFile(e.target, 'rom.gb'));
 document.getElementById('ram')
-  .addEventListener('change', e => loadFile(e.target, 'ram.sav'));
+  .addEventListener('change', () => loadFile(e.target, 'ram.sav'));
 document.getElementById('load')
   .addEventListener('click', load);
 document.getElementById('load')
@@ -102,9 +102,9 @@ const bindings = new Map([
 ]);
 bindings.forEach((code, id) => {
   document.getElementById(id + '-btn')
-    .addEventListener('pointerenter', e => simulateKey('keydown', code));
+    .addEventListener('pointerenter', () => simulateKey('keydown', code));
   document.getElementById(id + '-btn')
-    .addEventListener('pointerleave', e => simulateKey('keyup', code));
+    .addEventListener('pointerleave', () => simulateKey('keyup', code));
 });
 
 // load webassembly module

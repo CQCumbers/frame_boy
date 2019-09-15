@@ -1,5 +1,5 @@
 # based on Makefile clean command
-*.exe
+frame_boy
 *~
 *.out
 *.dSYM

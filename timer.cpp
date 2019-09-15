@@ -27,8 +27,7 @@ void Timer::update(unsigned cpu_cycles) {
       tima_scheduled = false;
     }
     bool bit = on && read1(clock, freq_bit);
-    if (last_bit && !bit)
-      tima_scheduled = (++tima == 0);
+    if (last_bit && !bit) tima_scheduled = (++tima == 0);
     last_bit = bit;
   }
   div = clock >> 8;

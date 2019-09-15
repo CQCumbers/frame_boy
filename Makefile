@@ -1,7 +1,7 @@
 # Compile the main executable
-main.exe: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c
+frame_boy: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c
 	g++ -std=c++11 -Wall -Wextra -O3 -fno-rtti -fno-exceptions \
-	memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c -o main.exe \
+	memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c -o frame_boy \
 	-I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2
 
 # Compile main executable to wasm
@@ -19,7 +19,7 @@ serve: index.html
 
 # Remove automatically generated files
 clean:
-	rm -rvf *.exe *~ *.out *.dSYM *.stackdump dist/*
+	rm -rvf frame_boy *~ *.out *.dSYM *.stackdump dist/*
 
 # Run cppcheck static analyzer
 check:
