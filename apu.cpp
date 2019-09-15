@@ -4,12 +4,14 @@
 
 const std::array<uint8_t, 4> Channel::vol_codes = {4, 0, 1, 2};
 const std::array<uint8_t, 8> Channel::noise_freqs = {4, 8, 16, 24, 32, 40, 48, 56};
-const std::array<uint8_t, 4> Channel::duty_cycles = {0x8, 0x81, 0xe1, 0x7e};
+const std::array<uint8_t, 4> Channel::duty_cycles = {0x01, 0x81, 0x87, 0x7e};
 
 // Channel Functions
 
 Channel::Channel(CT type_in, Memory &mem_in) : mem(mem_in), type(type_in) {
+  // set r/w permission bitmasks
   mem.rmask(Range(addr, addr + 4), 0x0);
+  // create on-write hooks
   mem.hook(addr + 4, [&](uint8_t val) {
     if (read1(val, 7))
       enable();
@@ -19,7 +21,7 @@ Channel::Channel(CT type_in, Memory &mem_in) : mem(mem_in), type(type_in) {
       if (!read1(val, 7))
         on = false;
     });
-    mem.hook(addr + 1, [&](uint8_t val) { len = 0xff - val; });
+    mem.hook(addr + 1, [&](uint8_t val) { len = 0x100 - val; });
     mem.hook(addr + 2,
              [&](uint8_t val) { volume = vol_codes[(val >> 5) & 0x3]; });
   } else
@@ -39,7 +41,15 @@ void Channel::enable() {
     sweep_freq = ((nr4 & 0x7) << 8) | nr3;
     sweep_len = (nr0 >> 4) & 0x7;
     sweep_on = sweep_len != 0 || (nr0 & 0x7) != 0;
+    if ((nr0 & 0x7) != 0) update_sweep();
   }
+}
+
+void Channel::update_sweep() {
+  uint16_t freq = sweep_freq >> (nr0 & 0x7);
+  sweep_freq += read1(nr0, 3) ? !freq : freq;
+  if (sweep_freq > 0x7ff)
+    on = false;
 }
 
 void Channel::update_frame(uint8_t frame_pt) {
@@ -58,16 +68,12 @@ void Channel::update_frame(uint8_t frame_pt) {
   if ((frame_pt & 0x3) == 0x2 && type == CT::square1 && sweep_on &&
       sweep_len > 0 && --sweep_len == 0) {
     sweep_len = (nr0 >> 4) & 0x7;
-    uint16_t freq = sweep_freq >> (nr0 & 0x7);
-    if (!read1(nr0, 4))
-      sweep_freq += freq;
-    else
-      sweep_freq -= freq;
-    if (sweep_freq < 0x800) {
+    update_sweep();
+    if (on && (nr0 & 0x7) != 0) {
+      update_sweep();
       nr3 = sweep_freq & 0xff;
       nr4 = (nr4 & 0xf8) | (sweep_freq >> 8);
-    } else
-      on = false;
+    }
   }
 }
 
@@ -111,11 +117,17 @@ void Channel::update_wave() {
 // Core Functions
 
 APU::APU(Memory &mem_in) : mem(mem_in) {
-  nr50 = 0x77, nr51 = 0xf3, nr52 = 0xf1;
-  left_buffer = blip_new(4410);
-  right_buffer = blip_new(4410);
+  // create resampling buffers
+  left_buffer = blip_new(4410), right_buffer = blip_new(4410);
   blip_set_rates(left_buffer, 2097152, 44100 * 1.01);
   blip_set_rates(right_buffer, 2097152, 44100 * 1.01);
+  // set initial register values
+  nr50 = 0x77, nr51 = 0xf3, nr52 = 0xf1;
+  // create on-write hooks
+  mem.hook(0xff24, [&](uint8_t val) {
+      left_vol = ((val >> 4 & 0x7) + 1) * 16;
+      right_vol = ((val & 0x7) + 1) * 16;
+  });
   mem.hook(0xff25, [&](uint8_t val) {
     for (unsigned i = 0; i < 4; ++i) {
       channels[i].left_on = read1(val, 4 + i);
@@ -175,8 +187,8 @@ void APU::update(unsigned cpu_cycles) {
     }
 
     if (left_delta != 0)
-      blip_add_delta(left_buffer, sample, left_delta * 128);
+      blip_add_delta(left_buffer, sample, left_delta * left_vol);
     if (right_delta != 0)
-      blip_add_delta(right_buffer, sample, right_delta * 128);
+      blip_add_delta(right_buffer, sample, right_delta * right_vol);
   }
 }

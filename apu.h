@@ -39,6 +39,7 @@ public:
   int16_t last_out;
   bool left_on = true, right_on = true;
   Channel(CT type_in, Memory &mem_in);
+  void update_sweep();
   void update_frame(uint8_t frame_pt);
   void update_wave();
   const uint8_t &get_output() const { return output; }
@@ -58,6 +59,7 @@ private:
       Channel(CT::wave, mem),
       Channel(CT::noise, mem),
   }};
+  uint8_t left_vol = 128, right_vol = 128;
   blip_t *left_buffer, *right_buffer;
   std::vector<int16_t> audio;
 
