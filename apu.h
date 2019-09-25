@@ -74,7 +74,7 @@ public:
   explicit APU(Memory &mem_in);
   ~APU();
   void update(unsigned cpu_cycles);
-  const std::vector<int16_t> &get_audio();
+  const std::vector<int16_t> &read_audio();
 };
 
 #endif

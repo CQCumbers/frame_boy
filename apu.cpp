@@ -125,7 +125,7 @@ APU::~APU() {
   blip_delete(right_buffer);
 }
 
-const std::vector<int16_t> &APU::get_audio() {
+const std::vector<int16_t> &APU::read_audio() {
   blip_end_frame(left_buffer, sample + 1);
   blip_end_frame(right_buffer, sample + 1);
   sample = 0;

@@ -8,7 +8,12 @@ if ('serviceWorker' in navigator) {
 
 // setup file system
 
-const setupFS = () => {
+const setup = () => {
+  // set SDL defaults
+  SDL.defaults.copyOnLock = false;
+  SDL.defaults.discardOnLock = true;
+  SDL.defaults.opaqueFrontBuffer = false;
+
   // load files from indexedDB
   FS.mkdir('/data');
   FS.mount(IDBFS, {}, '/data');
@@ -22,27 +27,31 @@ const setupFS = () => {
   });
 };
 
-const syncFS = () => {
-  // sync files to indexedDB
-  Module.ccall('save', null, ['string'], ['ram.sav']);
+const save = () => {
+  Module._save();
   FS.syncfs(false, err => {});
 };
 
+const load = () => {
+  if (!FS.analyzePath('rom.gb').exists) return;
+  Module._load();
+};
+
 var lastFilename = '';
-window.onbeforeunload = syncFS;
-document.addEventListener('visibilitychange', syncFS);
+window.onbeforeunload = save;
+document.addEventListener('visibilitychange', save);
 
 // create event listeners
 
 const unlock = () => {
-  Module.SDL2.audioContext.resume().then(() => {
+  SDL.audioContext.resume().then(() => {
     let button = document.getElementById('load');
     button.removeEventListener('click', unlock);
     button.removeEventListener('touchend', unlock);
   });
 };
 
-const loadFile = (input, filename) => {
+const upload = (input, filename) => {
   if (input.files.length == 0) return;
   if (FS.analyzePath('ram.sav').exists) {
     FS.writeFile('ram.sav', '');
@@ -60,17 +69,12 @@ const loadFile = (input, filename) => {
   FS.writeFile('filename.txt', lastFilename);
 };
 
-const save = () => {
-  Module.ccall('save', null, ['string'], ['ram.sav']);
+const download = () => {
+  Module._save();
   if (!FS.analyzePath('ram.sav').exists) return;
   const data = FS.readFile('ram.sav');
   const blob = new Blob([data.buffer], {type: 'application/octet-binary'});
   saveAs(blob, lastFilename + '.sav');
-};
-
-const load = () => {
-  if (!FS.analyzePath('rom.gb').exists) return;
-  Module.ccall('load', null, ['string', 'string'], ['rom.gb', 'ram.sav']);
 };
 
 const simulateKey = (type, code) => {
@@ -84,9 +88,9 @@ const simulateKey = (type, code) => {
 // attach event listeners
 
 document.getElementById('rom')
-  .addEventListener('change', () => loadFile(e.target, 'rom.gb'));
+  .addEventListener('change', e => upload(e.target, 'rom.gb'));
 document.getElementById('ram')
-  .addEventListener('change', () => loadFile(e.target, 'ram.sav'));
+  .addEventListener('change', e => upload(e.target, 'ram.sav'));
 document.getElementById('load')
   .addEventListener('click', load);
 document.getElementById('load')
@@ -94,7 +98,7 @@ document.getElementById('load')
 document.getElementById('load')
   .addEventListener('touchend', unlock);
 document.getElementById('save')
-  .addEventListener('click', save);
+  .addEventListener('click', download);
 
 const bindings = new Map([
   ['select', 8], ['start', 13], ['a', 88], ['b', 90],
@@ -109,7 +113,5 @@ bindings.forEach((code, id) => {
 
 // load webassembly module
 
-var Module = {
-  canvas: document.getElementById('lcd'),
-  onRuntimeInitialized: setupFS
-};
+Module.canvas = document.getElementById('lcd');
+Module.preRun = setup;

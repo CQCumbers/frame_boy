@@ -1,7 +1,3 @@
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 #include "gameboy.h"
 #include <SDL2/SDL.h>
 
@@ -56,7 +52,7 @@ void loop() {
 
   // queue audio buffer
   gameboy->update();
-  const std::vector<int16_t> &audio = gameboy->get_audio();
+  const std::vector<int16_t> &audio = gameboy->read_audio();
   SDL_QueueAudio(dev, audio.data(), 2 * audio.size());
 }
 
@@ -68,19 +64,10 @@ void cleanup() {
   SDL_Quit();
 }
 
-extern "C" void save(const char *save) {
-  gameboy->save(save);
-}
-
-extern "C" void load(const char *filename, const char *save) {
-  delete gameboy;
-  gameboy = new Gameboy(filename, save);
-}
-
-extern "C" int main() {
+int main() {
   // setup SDL video
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-  SDL_CreateWindowAndRenderer(160, 144, 0, &window, &renderer);
+  SDL_CreateWindowAndRenderer(160 * 4, 144 * 4, 0, &window, &renderer);
   SDL_SetRenderDrawColor(renderer, 0x9b, 0xbc, 0x0f, 0xff);
   SDL_RenderClear(renderer);
   texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
@@ -97,16 +84,11 @@ extern "C" int main() {
   dev = SDL_OpenAudioDevice(nullptr, 0, &spec, nullptr, 0);
   SDL_PauseAudioDevice(dev, 0);
 
-#ifdef __EMSCRIPTEN__
-  // create main loop callback
-  emscripten_set_main_loop(loop, -1, 1);
-#else
-  // desktop-specific setup
-  SDL_SetWindowSize(window, 160 * 4, 144 * 4);
-  load("roms/zelda.gb", "roms/zelda.sav");
+  // call cleanup at exit
   atexit(cleanup);
 
   // setup main loop
+  gameboy = new Gameboy("roms/zelda.gb", "roms/zelda.sav");
   unsigned next_loop = SDL_GetTicks();
   while (true) {
     loop();
@@ -114,5 +96,4 @@ extern "C" int main() {
     int delay = next_loop - SDL_GetTicks();
     if (delay > 0) SDL_Delay(delay);
   }
-#endif
 }

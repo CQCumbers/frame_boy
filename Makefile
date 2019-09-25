@@ -1,16 +1,19 @@
+# cross-platform dependencies
+SOURCES = $(filter-out $(wildcard main*.cpp), $(wildcard *.cpp))
+
 # Compile the main executable
-frame_boy: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c
+frame_boy: $(SOURCES) blip_buf.c main_sdl2.cpp
 	g++ -std=c++11 -Wall -Wextra -O3 -fno-rtti -fno-exceptions \
-	memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c -o frame_boy \
+	$(SOURCES) blip_buf.c main_sdl2.cpp -o frame_boy \
 	-I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2
 
 # Compile main executable to wasm
-index.html: memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c
+index.html: $(SOURCES) blip_buf.c main_wasm.cpp
 	emcc -Wall -Wextra -O3 -fno-rtti -fno-exceptions \
-	memory.cpp cpu.cpp ppu.cpp apu.cpp timer.cpp joypad.cpp gameboy.cpp main.cpp blip_buf.c \
-	-o docs/index.html --llvm-lto 1 --emrun --shell-file base.html -s USE_SDL=2 \
-	-s EXPORTED_FUNCTIONS='["_load", "_save", "_main"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall"]' \
-	-s FORCE_FILESYSTEM=1 -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT='web'
+	$(SOURCES) blip_buf.c main_wasm.cpp -o docs/index.html --llvm-lto 1 \
+	--emrun --shell-file base.html --pre-js script.js \
+	-s ENVIRONMENT='web' -s EXPORTED_FUNCTIONS='["_load", "_save", "_main"]' \
+	-s FORCE_FILESYSTEM=1 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=1
 
 # serve wasm executable
 serve: index.html

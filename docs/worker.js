@@ -11,7 +11,13 @@
  * See https://goo.gl/2aRDsh
  */
 
-importScripts("https://storage.googleapis.com/workbox-cdn/releases/3.6.3/workbox-sw.js");
+importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 /**
  * The workboxSW.precacheAndRoute() method efficiently caches and responds to
@@ -45,19 +51,15 @@ self.__precacheManifest = [
   },
   {
     "url": "index.html",
-    "revision": "1d9e445156fed28e3c12504917504509"
+    "revision": "77c58fc11feaf2a22406eab4bfd1980b"
   },
   {
     "url": "index.js",
-    "revision": "3690383af807d94cd75e597524b7019c"
+    "revision": "d5637e54b2d450e39f6fac75ff929da4"
   },
   {
     "url": "index.wasm",
-    "revision": "20c5e2f6b218392f3be9ba8ef9485abd"
-  },
-  {
-    "url": "script.js",
-    "revision": "d9efa39ed3ef9ceab24e8c70c14452bc"
+    "revision": "b69302ad3db96cca94fcd384c80e918f"
   },
   {
     "url": "site.webmanifest",
@@ -68,5 +70,4 @@ self.__precacheManifest = [
     "revision": "b494038b9402848834467de6b4550082"
   }
 ].concat(self.__precacheManifest || []);
-workbox.precaching.suppressWarnings();
 workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
