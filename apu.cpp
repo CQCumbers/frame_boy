@@ -32,17 +32,19 @@ void Channel::enable() {
   if (len == 0) len = (type != CT::wave ? 0x3f : 0xff);
   if (type != CT::wave) vol = nr2 >> 4;
   if (type == CT::square1) {
-    sweep_freq = ((nr4 & 0x7) << 8) | nr3;
     sweep_len = (nr0 >> 4) & 0x7;
     sweep_on = sweep_len != 0 || (nr0 & 0x7) != 0;
-    if ((nr0 & 0x7) != 0) update_sweep();
+    if (nr0 & 0x7) update_sweep();
   }
 }
 
 void Channel::update_sweep() {
-  uint16_t freq = sweep_freq >> (nr0 & 0x7);
-  sweep_freq += read1(nr0, 3) ? -freq : freq;
-  if (sweep_freq > 0x7ff) on = false;
+  uint16_t freq = ((nr4 & 0x7) << 8) | nr3;
+  uint16_t update = freq >> (nr0 & 0x7);
+  freq += read1(nr0, 3) ? ~update : update;
+  if (freq > 0x7ff) on = false;
+  nr3 = freq & 0xff;
+  nr4 = (nr4 & 0xf8) | ((freq >> 8) & 0x7);
 }
 
 void Channel::update_frame(uint8_t frame_pt) {
@@ -60,8 +62,6 @@ void Channel::update_frame(uint8_t frame_pt) {
     update_sweep();
     if (!on || (nr0 & 0x7) == 0) return;
     update_sweep();
-    nr3 = sweep_freq & 0xff;
-    nr4 = (nr4 & 0xf8) | (sweep_freq >> 8);
   }
 }
 

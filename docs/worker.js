@@ -55,11 +55,11 @@ self.__precacheManifest = [
   },
   {
     "url": "index.js",
-    "revision": "d5637e54b2d450e39f6fac75ff929da4"
+    "revision": "a21ec98524e8b7ca98823ca206935d33"
   },
   {
     "url": "index.wasm",
-    "revision": "b69302ad3db96cca94fcd384c80e918f"
+    "revision": "ba468ff9555bfa0f294d29c5233c883c"
   },
   {
     "url": "site.webmanifest",

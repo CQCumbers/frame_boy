@@ -138,8 +138,8 @@ void Memory::swap_ram(unsigned bank) {
 }
 
 void Memory::save(const std::string &save) {
-  FILE *file = fopen(save.c_str(), "r");
-  if (file == nullptr || mbc == 0) return;
+  FILE *file = fopen(save.c_str(), "w");
+  if (file == nullptr || ram.size() < 0x2000) return;
   std::copy_n(&mem[0xa000], 0x2000, &ram[ram_bank * 0x2000]);
   fwrite(&ram[0], 1, ram.size(), file);
   fclose(file);

@@ -22,7 +22,7 @@ private:
   bool on = false, sweep_on = false;
   uint8_t wave_pt = 0, vol = 16, output = 0;
   uint16_t len = 0, vol_len = 0;
-  uint16_t sweep_len = 0, sweep_freq = 0;
+  uint16_t sweep_len = 0;
   uint16_t lsfr = 0;
   void enable();
 
